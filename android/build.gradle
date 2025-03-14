@@ -42,7 +42,7 @@ def supportsNamespace() {
 
 android {
   if (supportsNamespace()) {
-    namespace "com.d3chart"
+    namespace "dev.mitigate.d3chart"
 
     sourceSets {
       main {

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<meta
+  name="viewport"
+  content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
+<head title="char"></head>
+
+<!-- Load d3.js -->
+<script src="d3.v7.min.js"></script>
+<script src="d3-time-format.js"></script>
+
+<style>
+  body {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    font-family: 'Helvetica';
+    margin: 0;
+  }
+  #my_dataviz {
+    position: relative;
+    font-size: 0;
+  }
+  #highlight_holder {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 20px;
+  }
+  .row_holder {
+    gap: 4px;
+    display: flex;
+    flex-direction: column;
+  }
+  .row_holder > span {
+    font-weight: 700;
+    font-size: 17px;
+    height: 20px;
+  }
+  #values_holder {
+    margin-left: 10px;
+    margin-right: auto;
+  }
+  #timeholder {
+    padding: 5px;
+    margin-top: auto;
+    border-radius: 4px;
+    flex-direction: row;
+    background: #17bebb;
+  }
+  #timeholder > span {
+    height: 14px;
+    font-size: 12px;
+    color: white;
+    font-style: normal;
+    line-height: normal;
+  }
+  #timeholder > #time {
+    font-weight: 700;
+    margin-left: 8px;
+  }
+</style>
+
+<!-- Create a div where the graph will take place -->
+<body>
+  <div id="my_dataviz">
+    <div id="highlight_holder">
+      <div id="labels_holder" class="row_holder"></div>
+      <div id="values_holder" class="row_holder"></div>
+      <div id="timeholder">
+        <span id="date"></span>
+        <span id="time"></span>
+      </div>
+    </div>
+  </div>
+</body>
+<script>
+  window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'READY' }))
+</script>

@@ -1,10 +1,9 @@
 import { View, StyleSheet } from 'react-native';
-import { D3ChartView } from 'react-native-d3-chart';
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <D3ChartView color="#32a852" style={styles.box} />
+      {/* <D3ChartView color="#32a852" style={styles.box} /> */}
     </View>
   );
 }

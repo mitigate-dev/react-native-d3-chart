@@ -10,15 +10,11 @@ npm install react-native-d3-chart
 
 ## Usage
 
+TODO
 
 ```js
-import { D3ChartView } from "react-native-d3-chart";
-
-// ...
-
-<D3ChartView color="tomato" />
+import Chart from 'react-native-d3-chart';
 ```
-
 
 ## Contributing
 
