@@ -1,10 +1,10 @@
 import Chart from './Chart';
 export {
-  Point,
-  Dataset,
-  ChartProps,
-  TimeDomain,
-  CalendarStrings,
+  type Point,
+  type Dataset,
+  type ChartProps,
+  type TimeDomain,
+  type CalendarStrings,
 } from './types';
 
 export default Chart;

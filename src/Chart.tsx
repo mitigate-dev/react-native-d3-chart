@@ -1,15 +1,15 @@
 import React, { useRef, useMemo, useEffect, useCallback } from 'react';
 import { PixelRatio, Platform } from 'react-native';
 
-import { WebView, WebViewMessageEvent } from 'react-native-webview';
+import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import drawFunction from './drawFunction';
 import {
-  ChartProps,
-  TimeDomain,
-  ChartColors,
-  Dataset,
-  CalendarStrings,
+  type ChartProps,
+  type TimeDomain,
+  type ChartColors,
+  type Dataset,
+  type CalendarStrings,
 } from './types';
 
 const MAX_TEXT_ZOOM = 130;
