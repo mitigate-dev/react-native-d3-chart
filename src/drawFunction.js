@@ -345,8 +345,7 @@ window.draw = props => {
     const newScale =
       !x ||
       !wholeScaleX ||
-      zoomEnabled !== props.zoomEnabled ||
-      timeDomain !== props.timeDomain
+      !props.keepZoom
     zoomEnabled = props.zoomEnabled
     timeDomain = props.timeDomain
     if (newScale) {
@@ -769,6 +768,10 @@ window.draw = props => {
     }
 
     updateHighlight(newScale ? 0 : 300)
+
+    if (!newScale && props.keepZoom) {
+      rescaleY({ sourceEvent: null })
+    }
   } catch (e) {
     postMessage('error', e.message)
   }
@@ -784,4 +787,4 @@ console.log = (...args) => {
 }
 
 true
-`
+`;

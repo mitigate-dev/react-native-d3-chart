@@ -38,10 +38,15 @@ export default function Chart({
       return;
     }
 
+    const keepZoom =
+      currentTimeDomain.current?.start === timeDomain.start &&
+      currentTimeDomain.current?.end === timeDomain.end &&
+      currentTimeDomain.current?.type === timeDomain.type;
     const props: HtmlProps = {
       width,
       height,
       locale,
+      keepZoom,
       datasets,
       timeDomain,
       noDataString,
@@ -139,6 +144,7 @@ type HtmlProps = {
   zoomEnabled: boolean;
   height: number;
   width: number;
+  keepZoom: boolean;
   marginHorizontal: number;
   locale: string;
   timeDomain: TimeDomain;
