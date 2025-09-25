@@ -35,6 +35,7 @@ export type ChartProps = {
   noDataString: string;
   timeDomain: TimeDomain;
   locale?: string;
+  zoomEnabled?: boolean;
   marginHorizontal?: number;
   calendarStrings?: CalendarStrings;
   onZoomEnded?: () => void;

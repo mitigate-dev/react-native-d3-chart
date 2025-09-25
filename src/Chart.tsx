@@ -19,6 +19,7 @@ export default function Chart({
   height,
   datasets,
   timeDomain,
+  zoomEnabled,
   noDataString,
   calendarStrings,
   locale = 'en',
@@ -38,7 +39,6 @@ export default function Chart({
     }
 
     const props: HtmlProps = {
-      zoomEnabled: false,
       width,
       height,
       locale,
@@ -47,6 +47,7 @@ export default function Chart({
       noDataString,
       marginHorizontal,
       calendar: calendarStrings,
+      zoomEnabled: !!zoomEnabled,
       colors: chartColors,
     };
     currentTimeDomain.current = timeDomain;
@@ -73,6 +74,7 @@ export default function Chart({
     datasets,
     timeDomain,
     chartColors,
+    zoomEnabled,
     noDataString,
     calendarStrings,
     marginHorizontal,
@@ -101,11 +103,13 @@ export default function Chart({
   );
 
   const source = useMemo(() => {
-    const baseUrl = Platform.select({
-      ios: 'assets',
-      android: 'file:///android_asset',
-    });
-    return { uri: `${baseUrl}/chart.html` };
+    // Assets are copied to platform-specific locations
+    const uri = Platform.select({
+      ios: 'react-native-d3-chart-chart.html', // Direct file reference in iOS bundle
+      android: 'file:///android_asset/react-native-d3-chart/chart.html',
+    }) as string;
+
+    return { uri };
   }, []);
 
   const textZoom = Math.min(MAX_TEXT_ZOOM, PixelRatio.getFontScale() * 100);
