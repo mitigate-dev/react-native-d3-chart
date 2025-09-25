@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Switch } from 'react-native';
 import Chart, { ChartProps, Dataset } from 'react-native-d3-chart';
 
 type TimeDomainType = 'hour' | 'day' | 'week' | 'month';
@@ -42,16 +42,23 @@ const generateDataPoints = ({
   return points;
 };
 
-const datasets: Dataset[] = [
-  {
-    unit: 'kg',
+enum Measurement {
+  Red = 'Red',
+  Blue = 'Blue',
+  Green = 'Green',
+  Pink = 'Pink',
+}
+const measurementKeys = Object.values(Measurement);
+const measurementsRecords: Record<Measurement, Dataset> = {
+  [Measurement.Red]: {
+    unit: '°C',
     points: generateDataPoints(),
     decimals: 0,
     color: '#e66',
-    measurementName: 'Red',
+    measurementName: Measurement.Red,
   },
-  {
-    unit: 'cm',
+  [Measurement.Blue]: {
+    unit: 'l',
     points: generateDataPoints({
       startingValue: 160,
       minimum: 50,
@@ -59,20 +66,30 @@ const datasets: Dataset[] = [
     }),
     decimals: 0,
     color: '#66e',
-    measurementName: 'Blue',
+    measurementName: Measurement.Blue,
   },
-  {
+  [Measurement.Green]: {
     unit: 'kg',
     points: generateDataPoints(),
     decimals: 0,
     color: '#6e6',
-    measurementName: 'Green',
+    measurementName: Measurement.Green,
   },
-];
+  [Measurement.Pink]: {
+    unit: 'm/s',
+    points: generateDataPoints({
+      startingValue: 20,
+      minimum: 100,
+    }),
+    decimals: 1,
+    color: '#e0e',
+    measurementName: Measurement.Pink,
+  },
+};
 
 export default function App() {
   const [width, setWidth] = useState<number>(0);
-  const height = width * 0.8;
+  const height = width * 1.1;
   const [timeDomainType, setTimeDomainType] = useState<TimeDomainType>('hour');
   const timeDomain = useMemo(() => {
     const now = new Date().valueOf();
@@ -94,6 +111,15 @@ export default function App() {
 
     return { start, end, type: timeDomainType };
   }, [timeDomainType]);
+
+  const [enabledMeasurements, setEnabledMeasurements] = useState<Measurement[]>(
+    [Measurement.Red]
+  );
+
+  const datasets = useMemo<Dataset[]>(
+    () => enabledMeasurements.map((m) => measurementsRecords[m]),
+    [enabledMeasurements]
+  );
 
   return (
     <View
@@ -125,6 +151,42 @@ export default function App() {
           </TouchableOpacity>
         ))}
       </View>
+      {/* Measurement toggles */}
+      {measurementKeys.map((measurement) => (
+        <View
+          key={measurement}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginVertical: 10,
+          }}
+        >
+          <Switch
+            value={enabledMeasurements.includes(measurement)}
+            onValueChange={() =>
+              setEnabledMeasurements((prev) => {
+                if (!prev.includes(measurement))
+                  // enable
+                  return prev.concat(measurement);
+
+                if (prev.length !== 1)
+                  // disable
+                  return prev.filter((m) => m !== measurement);
+
+                // only one measurement was enabled, switch to next one
+                const currentIndex = measurementKeys.findIndex(
+                  (m) => m === measurement
+                );
+                const nextIndex = (currentIndex + 1) % measurementKeys.length;
+                const nextMeasurement = measurementKeys[nextIndex]!;
+
+                return [nextMeasurement];
+              })
+            }
+          />
+          <Text style={{ marginLeft: 10 }}>{measurement}</Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -139,6 +201,7 @@ const styles = StyleSheet.create({
   },
   holder: {
     width: '100%',
+    flex: 1,
     borderRadius: 10,
     paddingVertical: PADDING,
     backgroundColor: '#fff',
