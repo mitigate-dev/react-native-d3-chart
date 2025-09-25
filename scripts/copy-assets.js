@@ -75,39 +75,92 @@ function copyAssets() {
       );
     }
 
-    // Copy iOS assets
+    // Copy iOS assets to app bundle root with prefixed names
     if (fs.existsSync(iosAssetsSource)) {
       try {
         const iosDir = path.join(appRoot, 'ios');
         if (fs.existsSync(iosDir)) {
-          // iOS assets should go to ios/assets directory
-          const iosAssetsTargetDir = path.join(iosDir, 'assets');
+          // Find the iOS app target directory
+          const iosFiles = fs.readdirSync(iosDir);
+          const xcodeProj = iosFiles.find((file) =>
+            file.endsWith('.xcodeproj')
+          );
 
-          try {
-            // Ensure target directory exists
-            fs.mkdirSync(iosAssetsTargetDir, { recursive: true });
+          if (xcodeProj) {
+            const appName = xcodeProj.replace('.xcodeproj', '');
+            const appTargetDir = path.join(iosDir, appName);
 
-            // Copy each file
-            const files = fs.readdirSync(iosAssetsSource);
-            files.forEach((file) => {
-              const sourcePath = path.join(iosAssetsSource, file);
-              const targetPath = path.join(iosAssetsTargetDir, file);
+            // Copy files to iOS project root (not inside app target directory)
+            try {
+              // Copy each file with react-native-d3-chart prefix
+              const files = fs.readdirSync(iosAssetsSource);
+              files.forEach((file) => {
+                const sourcePath = path.join(iosAssetsSource, file);
+                const prefixedFileName = `react-native-d3-chart-${file}`;
+                const targetPath = path.join(iosDir, prefixedFileName);
 
-              // Only copy files (not directories or .DS_Store)
-              if (
-                fs.lstatSync(sourcePath).isFile() &&
-                !file.startsWith('.DS_Store')
-              ) {
-                fs.copyFileSync(sourcePath, targetPath);
-                console.log(
-                  `react-native-d3-chart: Copied ${file} to iOS assets`
+                  // Only copy files (not directories or .DS_Store)
+                  if (
+                    fs.lstatSync(sourcePath).isFile() &&
+                    !file.startsWith('.DS_Store')
+                  ) {
+                    if (file === 'chart.html') {
+                      // For HTML file, update script references to use prefixed names
+                      let htmlContent = fs.readFileSync(sourcePath, 'utf8');
+                      htmlContent = htmlContent
+                        .replace(
+                          'src="d3.v7.min.js"',
+                          'src="react-native-d3-chart-d3.v7.min.js"'
+                        )
+                        .replace(
+                          'src="d3-time-format.js"',
+                          'src="react-native-d3-chart-d3-time-format.js"'
+                        );
+
+                      fs.writeFileSync(targetPath, htmlContent);
+                      console.log(
+                        `react-native-d3-chart: Created iOS-specific ${prefixedFileName} with updated script references`
+                      );
+                    } else {
+                      // For other files, just copy
+                      fs.copyFileSync(sourcePath, targetPath);
+                      console.log(
+                        `react-native-d3-chart: Copied ${file} to iOS bundle as ${prefixedFileName}`
+                      );
+                    }
+                  }
+                });
+
+                // Add assets to Xcode project
+                try {
+                  const {
+                    addAssetsToXcodeProject,
+                  } = require('./add-ios-assets.js');
+                  const xcodeProjectPath = path.join(iosDir, xcodeProj);
+                  const assetFiles = files
+                    .filter(
+                      (file) =>
+                        !file.startsWith('.DS_Store') &&
+                        fs.lstatSync(path.join(iosAssetsSource, file)).isFile()
+                    )
+                    .map((file) => `react-native-d3-chart-${file}`);
+
+                  addAssetsToXcodeProject(xcodeProjectPath, assetFiles);
+                } catch (error) {
+                  console.warn(
+                    'react-native-d3-chart: Failed to update Xcode project:',
+                    error.message
+                  );
+                }
+              } catch (error) {
+                console.warn(
+                  'react-native-d3-chart: Failed to copy iOS assets:',
+                  error.message
                 );
               }
-            });
-          } catch (error) {
-            console.warn(
-              'react-native-d3-chart: Failed to copy iOS assets:',
-              error.message
+          } else {
+            console.log(
+              'react-native-d3-chart: No Xcode project found, skipping iOS assets'
             );
           }
         } else {

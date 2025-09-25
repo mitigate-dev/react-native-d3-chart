@@ -38,13 +38,14 @@
     "!**/.*"
   ],
   "scripts": {
-    "android": "FORCE_COPY=1 yarn copy-assets && cd example && yarn android",
+    "android": "cd example && yarn android",
+    "ios": "cd example && yarn ios",
     "example": "yarn workspace react-native-d3-chart-example",
     "test": "jest",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
-    "prepare": "bob build",
+    "prepare": "bob build && FORCE_COPY=1 yarn copy-assets",
     "copy-assets": "node scripts/copy-assets.js",
     "postinstall": "yarn copy-assets",
     "release": "release-it"

@@ -49,8 +49,8 @@ example/ios/Pods
 example/vendor/
 
 # Example Assets - copied by postinstall script
-example/ios/assets
-example/android/app/src/main/assets
+example/ios/react-native-d3-chart-*
+example/android/app/src/main/assets/react-native-d3-chart
 
 # node.js
 #
