@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
-import Chart, { ChartProps, Dataset } from '../../src/index';
+import Chart, { ChartProps, Dataset } from 'react-native-d3-chart';
 
 type TimeDomainType = 'hour' | 'day' | 'week' | 'month';
 

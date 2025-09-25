@@ -1,5 +1,5 @@
 import React, { useRef, useMemo, useEffect, useCallback } from 'react';
-import { PixelRatio, Platform } from 'react-native';
+import { PixelRatio, Platform, View } from 'react-native';
 
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
@@ -111,21 +111,23 @@ export default function Chart({
   const textZoom = Math.min(MAX_TEXT_ZOOM, PixelRatio.getFontScale() * 100);
 
   return (
-    <WebView
-      ref={ref}
-      javaScriptEnabled
-      thirdPartyCookiesEnabled
-      source={source}
-      bounces={false}
-      textZoom={textZoom}
-      scrollEnabled={false}
-      overScrollMode="never"
-      originWhitelist={['file://']}
-      setBuiltInZoomControls={false}
-      setDisplayZoomControls={false}
-      style={{ height, width, backgroundColor: chartColors.background }}
-      onMessage={onMessage}
-    />
+    <View style={{ width, height }}>
+      <WebView
+        ref={ref}
+        javaScriptEnabled
+        thirdPartyCookiesEnabled
+        source={source}
+        bounces={false}
+        textZoom={textZoom}
+        scrollEnabled={false}
+        overScrollMode="never"
+        originWhitelist={['file://']}
+        setBuiltInZoomControls={false}
+        setDisplayZoomControls={false}
+        style={{ height, width, backgroundColor: chartColors.background }}
+        onMessage={onMessage}
+      />
+    </View>
   );
 }
 

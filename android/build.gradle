@@ -47,6 +47,13 @@ android {
     sourceSets {
       main {
         manifest.srcFile "src/main/AndroidManifestNew.xml"
+        assets.srcDirs = ["src/main/assets"]
+      }
+    }
+  } else {
+    sourceSets {
+      main {
+        assets.srcDirs = ["src/main/assets"]
       }
     }
   }

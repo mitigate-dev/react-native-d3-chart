@@ -22,6 +22,7 @@
     "lib",
     "android",
     "ios",
+    "scripts",
     "cpp",
     "*.podspec",
     "react-native.config.js",
@@ -37,12 +38,15 @@
     "!**/.*"
   ],
   "scripts": {
+    "android": "FORCE_COPY=1 yarn copy-assets && cd example && yarn android",
     "example": "yarn workspace react-native-d3-chart-example",
     "test": "jest",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
     "prepare": "bob build",
+    "copy-assets": "node scripts/copy-assets.js",
+    "postinstall": "yarn copy-assets",
     "release": "release-it"
   },
   "keywords": [

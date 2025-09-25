@@ -48,6 +48,10 @@ example/ios/Pods
 # Ruby
 example/vendor/
 
+# Example Assets - copied by postinstall script
+example/ios/assets
+example/android/app/src/main/assets
+
 # node.js
 #
 node_modules/
