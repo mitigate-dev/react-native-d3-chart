@@ -55,7 +55,16 @@ const measurementsRecords: Record<Measurement, Dataset> = {
     unit: '°C',
     points: generateDataPoints(),
     decimals: 0,
-    color: '#e66',
+    areaColor: '#e78e96',
+    color: {
+      type: 'thresholds',
+      baseColor: '#CF1E2E',
+      gradientBlur: 50,
+      thresholds: [
+        { value: 800, color: '#089851' },
+        { value: 400, color: '#F29400' },
+      ],
+    },
     measurementName: Measurement.Red,
   },
   [Measurement.Blue]: {

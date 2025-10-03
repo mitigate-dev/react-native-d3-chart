@@ -37,13 +37,13 @@ yarn add react-native-webview
 ## Quick Start
 
 ```tsx
-import React, { useState, useMemo } from 'react';
-import { View } from 'react-native';
-import Chart from 'react-native-d3-chart';
+import React, { useState, useMemo } from 'react'
+import { View } from 'react-native'
+import Chart from 'react-native-d3-chart'
 
 export default function App() {
-  const [width, setWidth] = useState(0);
-  const height = width * 0.6; // 16:10 aspect ratio
+  const [width, setWidth] = useState(0)
+  const height = width * 0.6 // 16:10 aspect ratio
 
   // Generate some sample data
   const datasets = useMemo(
@@ -61,7 +61,7 @@ export default function App() {
       },
     ],
     []
-  );
+  )
 
   const timeDomain = useMemo(
     () => ({
@@ -70,7 +70,7 @@ export default function App() {
       end: Date.now(),
     }),
     []
-  );
+  )
 
   const colors = {
     background: '#fff',
@@ -79,7 +79,7 @@ export default function App() {
     cursorStroke: '#0ff',
     highlightLabel: '#000',
     highlightTime: '#444',
-  };
+  }
 
   return (
     <View
@@ -95,7 +95,7 @@ export default function App() {
         noDataString="No data available"
       />
     </View>
-  );
+  )
 }
 ```
 
@@ -126,62 +126,74 @@ export default function App() {
 
 ```typescript
 type Dataset = {
-  measurementName: string; // Display name for this data series
-  color: string; // Hex color for the line and labels
-  points: Point[]; // Array of data points
-  unit: string; // Unit symbol (e.g., '°C', 'kg', 'm/s')
-  decimals: number; // Number of decimal places to show
-  minDeltaY?: number; // Minimum Y-axis change to show, limit Y-zoom
-  decimalSeparator?: '.' | ','; // Decimal separator
+  measurementName: string // Display name for this data series
+  color: string | ThresholdColor // Hex color for the line, or threshold-based coloring
+  points: Point[] // Array of data points
+  unit: string // Unit symbol (e.g., '°C', 'kg', 'm/s')
+  decimals: number // Number of decimal places to show
+  minDeltaY?: number // Minimum Y-axis change to show, limit Y-zoom
+  areaColor?: string // Optional area fill color (defaults to base color)
+  axisColor?: string // Optional Y-axis text color (defaults to base color)
+  decimalSeparator?: '.' | ',' // Decimal separator
   domain?: {
     // Custom Y-axis range
-    bottom: number;
-    top: number;
-  };
-};
+    bottom: number
+    top: number
+  }
+}
+
+type ThresholdColor = {
+  type: 'thresholds'
+  baseColor: string // Default color for values below all thresholds
+  gradientBlur: number // Gradient transition distance around thresholds
+  thresholds: Array<{
+    value: number // Threshold value
+    color: string // Color to use above this value
+  }> // Should be sorted by value descending
+}
 ```
 
 #### Point
 
 ```typescript
 type Point = {
-  timestamp: number; // Unix timestamp in milliseconds
-  value: number | null; // Data value (null for gaps)
-};
+  timestamp: number // Unix timestamp in milliseconds
+  value: number | null // Data value (null for gaps)
+}
 ```
 
 #### TimeDomain
 
 ```typescript
 type TimeDomain = {
-  type: string; // Domain type (e.g., 'hour', 'day', 'week')
-  start: number; // Start timestamp (ms)
-  end: number; // End timestamp (ms)
-};
+  type: string // Domain type (e.g., 'hour', 'day', 'week')
+  start: number // Start timestamp (ms)
+  end: number // End timestamp (ms)
+}
 ```
 
 #### ChartColors
 
 ```typescript
 type ChartColors = {
-  background: string; // Chart background color
-  highlightLine: string; // Crosshair line color
-  border: string; // Chart border color
-  highlightLabel: string; // Value label text color
-  highlightTime: string; // Time label text color
-  cursorStroke: string; // Cursor/crosshair circle color
-};
+  background: string // Chart background color
+  highlightLine: string // Crosshair line color
+  border: string // Chart border color
+  highlightLabel: string // Value label text color
+  highlightTime: string // Time label text color
+  cursorStroke: string // Cursor/crosshair circle color
+}
 ```
 
 #### CalendarStrings
 
 ```typescript
 type CalendarStrings = {
-  days: string[]; // Full day names (Sunday first)
-  shortDays: string[]; // Short day names (Sun first)
-  months: string[]; // Full month names (January first)
-  shortMonths: string[]; // Short month names (Jan first)
-};
+  days: string[] // Full day names (Sunday first)
+  shortDays: string[] // Short day names (Sun first)
+  months: string[] // Full month names (January first)
+  shortMonths: string[] // Short month names (Jan first)
+}
 ```
 
 ## Advanced Usage
@@ -204,8 +216,47 @@ const datasets = [
     decimals: 0,
     points: humidityData,
   },
-];
+]
 ```
+
+### Threshold-Based Colors
+
+Create dynamic line colors that change based on data values using threshold configurations. This is perfect for showing status indicators, alerts, or different states in your data:
+
+```tsx
+const datasetWithThresholds = {
+  measurementName: 'Server Load',
+  unit: '%',
+  decimals: 0,
+  areaColor: '#e78e96', // Optional: custom area fill color
+  color: {
+    type: 'thresholds',
+    baseColor: '#089851', // Green for values below all thresholds (low load)
+    gradientBlur: 50, // Smooth transition distance around thresholds
+    thresholds: [
+      { value: 85, color: '#CF1E2E' }, // Red for values >= 85% (critical)
+      { value: 50, color: '#F29400' }, // Orange for values >= 50% (warning)
+      // Values < 50% will use baseColor (green)
+    ],
+  },
+  points: serverLoadData,
+}
+```
+
+**How it works:**
+
+- **Thresholds should be sorted by value in descending order**
+- Values >= 85% will be colored red (`#CF1E2E`) - critical load
+- Values >= 50% but < 80% will be colored orange (`#F29400`) - warning load
+- Values < 50% will use the `baseColor` green (`#089851`) - healthy load
+- The `gradientBlur` creates smooth color transitions around threshold boundaries
+
+**Real-world examples:**
+
+- **Temperature monitoring**: Blue (cold) → Green (optimal) → Red (overheating)
+- **Performance metrics**: Red (poor) → Yellow (acceptable) → Green (excellent)
+- **Battery levels**: Red (critical) → Orange (low) → Green (healthy)
+- **Network latency**: Green (fast) → Yellow (moderate) → Red (slow)
 
 ### Zoom Callbacks
 

@@ -20,7 +20,7 @@ function sample(data, count, domain) {
   }
 
   const batchLength = (domainEnd - domainStart) / count
-  var i = data.findIndex(d => d.timestamp >= domainStart)
+  var i = data.findIndex((d) => d.timestamp >= domainStart)
   if (i < 0) return []
 
   var batchEnd =
@@ -131,6 +131,21 @@ function extractValue(d) {
 
 function extractDate(d) {
   return d.date
+}
+
+function getDatasetColor(dataset, value) {
+  if (dataset.color.type === 'thresholds') {
+    const crossedThreshold = dataset.color.thresholds.find(
+      (threshold) => value >= threshold.value
+    )
+
+    if (crossedThreshold) {
+      return crossedThreshold.color
+    }
+
+    return dataset.color.baseColor
+  }
+  return dataset.color
 }
 
 function formatXAxis(g) {
@@ -396,7 +411,12 @@ window.draw = (props) => {
         .select('g#y_axis' + index)
         .transition()
         .call(buildYAxis(y, dataset, index))
-        .call(fromatYAxis, color, index, width)
+        .call(
+          fromatYAxis,
+          dataset.axisColor ?? getDatasetColor(dataset),
+          index,
+          width
+        )
 
       defs
         .append('linearGradient')
@@ -419,7 +439,7 @@ window.draw = (props) => {
         .append('stop')
         .attr('offset', getGradientOffset(y))
         .attr('stop-opacity', (d) => d.opacity)
-        .attr('stop-color', color)
+        .attr('stop-color', dataset.areaColor ?? getDatasetColor(dataset))
 
       selectOrAppend(chart, 'path', 'area' + index)
         .datum(data)
@@ -443,8 +463,46 @@ window.draw = (props) => {
         .attr('class', 'line')
         .attr('fill', 'none')
         .attr('stroke-width', 2)
+
+      if (dataset.color.type === 'thresholds') {
+        const { baseColor, gradientBlur, thresholds } = dataset.color
+        const stops = []
+        thresholds.forEach(({ value, color }, index) => {
+          stops.push(
+            {
+              value: value + gradientBlur,
+              color: color,
+            },
+            {
+              value: value - gradientBlur,
+              color: thresholds[index + 1]?.color ?? baseColor,
+            }
+          )
+        })
+
+        defs
+          .append('linearGradient')
+          .attr('id', 'line-gradient' + index)
+          .attr('gradientUnits', 'userSpaceOnUse')
+          .attr('x1', 0)
+          .attr('x2', 0)
+          .attr('y1', 0)
+          .attr('y2', '100%')
+          .selectAll('stop')
+          .data(stops)
+          .enter()
+          .append('stop')
+          .attr('offset', getGradientOffset(y))
+          .attr('stop-color', (stop) => stop.color)
+      }
+
       d3.select('path#line' + index)
-        .attr('stroke', color)
+        .attr(
+          'stroke',
+          dataset.color.type === 'thresholds'
+            ? 'url(#line-gradient' + index + ')'
+            : dataset.color
+        )
         .transition()
         .attr(
           'd',
@@ -498,7 +556,10 @@ window.draw = (props) => {
       .attr('y2', height)
 
     props.datasets.forEach(
-      ({ points, color, measurementName, unit }, index) => {
+      /* prettier-ignore newline */
+      (dataset, index) => {
+        const { points, measurementName, unit } = dataset
+        const color = getDatasetColor(dataset)
         selectOrAppend(d3.select('#labels_holder'), 'span', 'label' + index)
           .style('color', colors.highlightLabel)
           .html(measurementName)
@@ -515,9 +576,9 @@ window.draw = (props) => {
         )
           .attr('r', 5)
           .attr('opacity', 0)
-          .attr('fill', color)
+          .attr('fill', 'transparent')
           .attr('stroke-width', 2)
-          .attr('stroke', colors.cursorStroke)
+          .attr('stroke', color)
           .attr('cx', width * highlightPosition)
 
         if (!highlightCroshair.attr('cy')) {
@@ -526,7 +587,7 @@ window.draw = (props) => {
 
         const unitPositionKey = index % 2 === 0 ? 'right' : 'left'
         selectOrAppend(d3.select('div#my_dataviz'), 'span', 'unit' + index)
-          .style('color', color)
+          .style('color', dataset.axisColor ?? color)
           .style('font-size', '10px')
           .style('position', 'absolute')
           .style('bottom', margin.bottom - 5 + 'px')
@@ -609,10 +670,21 @@ window.draw = (props) => {
           .transition()
           .duration(duration)
           .call(buildYAxis(y, dataset, index))
-          .call(fromatYAxis, dataset.color, index, width)
+          .call(
+            fromatYAxis,
+            dataset.axisColor ?? getDatasetColor(dataset),
+            index,
+            width
+          )
 
         defs
-          .select('linearGradient#area-gradient' + index)
+          .selectAll(
+            'linearGradient#area-gradient' +
+              index +
+              ',' +
+              'linearGradient#line-gradient' +
+              index
+          )
           .selectAll('stop')
           .transition()
           .duration(duration)
@@ -692,12 +764,14 @@ window.draw = (props) => {
       const highlightExactDate = x.invert(x0)
 
       var highlightTime = null
-      props.datasets.forEach(({ unit, decimals }, index) => {
+      props.datasets.forEach((dataset, index) => {
+        const { unit, decimals } = dataset
         const { definedData, y } = operators[index]
 
         if (!definedData.length) {
           valuesHolder
             .select('span#highlightvalue' + index)
+            .style('color', getDatasetColor(dataset))
             .html(props.noDataString)
 
           return
@@ -712,6 +786,11 @@ window.draw = (props) => {
           Math.abs(x0 - xValue) > 8 &&
           Math.abs(highlightExactDate - highlight.date) > 10 * 60 * 1000
 
+        const color = getDatasetColor(
+          dataset,
+          tooFar ? undefined : highlight.value
+        )
+
         if (!tooFar) {
           highlightTime = highlight.date
         }
@@ -721,10 +800,12 @@ window.draw = (props) => {
           .duration(duration)
           .attr('cx', xValue)
           .attr('cy', y(highlight.value))
+          .attr('stroke', color)
           .attr('opacity', tooFar ? 0 : 1)
 
         valuesHolder
           .select('span#highlightvalue' + index)
+          .style('color', color)
           .html(
             tooFar
               ? props.noDataString

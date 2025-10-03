@@ -18,11 +18,21 @@ export type CalendarStrings = {
 
 export type Dataset = {
   measurementName: string
-  color: string
+  color:
+    | string
+    | {
+        type: 'thresholds'
+        baseColor: string
+        gradientBlur: number
+        /* should be sorted by value descending */
+        thresholds: { value: number; color: string }[]
+      }
   points: Point[]
   unit: string
   decimals: number
   minDeltaY?: number
+  areaColor?: string
+  axisColor?: string
   decimalSeparator?: '.' | ','
   domain?: { bottom: number; top: number }
 }
