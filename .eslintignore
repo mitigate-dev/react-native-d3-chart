@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+lib/
+
+# Generated files
+android/build/
+ios/build/
+
+# Assets that shouldn't be linted
+ios/assets/
+android/src/main/assets/
+**/d3*.js
+**/chart.html
+example/ios/react-native-d3-chart-*
+example/android/app/src/main/assets/react-native-d3-chart/
+

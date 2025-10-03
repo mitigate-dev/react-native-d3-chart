@@ -11,4 +11,4 @@ module.exports = {
     },
     assets: ['android/src/main/assets', 'ios/assets'], // Note: relative to library root
   },
-};
+}

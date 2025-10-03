@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Switch } from 'react-native';
-import Chart, { ChartProps, Dataset } from 'react-native-d3-chart';
+import React, { useMemo, useState } from 'react'
+import { View, StyleSheet, TouchableOpacity, Text, Switch } from 'react-native'
 
-type TimeDomainType = 'hour' | 'day' | 'week' | 'month';
+import Chart, { ChartProps, Dataset } from 'react-native-d3-chart'
 
-const TIME_DOMAIN_TYPES: TimeDomainType[] = ['hour', 'day', 'week', 'month'];
+type TimeDomainType = 'hour' | 'day' | 'week' | 'month'
+
+const TIME_DOMAIN_TYPES: TimeDomainType[] = ['hour', 'day', 'week', 'month']
 
 const chartColors: ChartProps['colors'] = {
   background: '#fff',
@@ -13,7 +14,7 @@ const chartColors: ChartProps['colors'] = {
   cursorStroke: '#0ff',
   highlightLabel: '#000',
   highlightTime: '#444',
-};
+}
 
 // Generate data points every minute from a month ago to now
 const generateDataPoints = ({
@@ -21,26 +22,26 @@ const generateDataPoints = ({
   minimum = 0,
   radomFactor = 20,
 } = {}) => {
-  const points = [];
-  const now = Date.now();
-  const monthAgo = now - 30 * 24 * 60 * 60 * 1000; // 30 days ago
-  let value = startingValue;
+  const points = []
+  const now = Date.now()
+  const monthAgo = now - 30 * 24 * 60 * 60 * 1000 // 30 days ago
+  let value = startingValue
 
   for (let timestamp = monthAgo; timestamp <= now; timestamp += 60 * 1000) {
-    const randomVariation = (Math.random() - 0.5) * radomFactor;
-    value += randomVariation;
+    const randomVariation = (Math.random() - 0.5) * radomFactor
+    value += randomVariation
 
     // randomVariation was negative and value went below minimum
     if (value < minimum) {
       // invert direction to keep above minimum
-      value -= 2 * randomVariation;
+      value -= 2 * randomVariation
     }
 
-    points.push({ timestamp, value });
+    points.push({ timestamp, value })
   }
 
-  return points;
-};
+  return points
+}
 
 enum Measurement {
   Red = 'Red',
@@ -48,7 +49,7 @@ enum Measurement {
   Green = 'Green',
   Pink = 'Pink',
 }
-const measurementKeys = Object.values(Measurement);
+const measurementKeys = Object.values(Measurement)
 const measurementsRecords: Record<Measurement, Dataset> = {
   [Measurement.Red]: {
     unit: '°C',
@@ -85,41 +86,41 @@ const measurementsRecords: Record<Measurement, Dataset> = {
     color: '#e0e',
     measurementName: Measurement.Pink,
   },
-};
+}
 
 export default function App() {
-  const [width, setWidth] = useState<number>(0);
-  const height = width * 1.1;
-  const [timeDomainType, setTimeDomainType] = useState<TimeDomainType>('hour');
+  const [width, setWidth] = useState<number>(0)
+  const height = width * 1.1
+  const [timeDomainType, setTimeDomainType] = useState<TimeDomainType>('hour')
   const timeDomain = useMemo(() => {
-    const now = new Date().valueOf();
-    var hours = 1;
+    const now = new Date().valueOf()
+    let hours = 1
     if (timeDomainType !== 'hour') {
-      hours *= 24;
+      hours *= 24
 
       if (timeDomainType === 'week') {
-        hours *= 7;
+        hours *= 7
       }
 
       if (timeDomainType === 'month') {
-        hours *= 30;
+        hours *= 30
       }
     }
 
-    const start = now - hours * 60 * 60 * 1000;
-    const end = now;
+    const start = now - hours * 60 * 60 * 1000
+    const end = now
 
-    return { start, end, type: timeDomainType };
-  }, [timeDomainType]);
+    return { start, end, type: timeDomainType }
+  }, [timeDomainType])
 
   const [enabledMeasurements, setEnabledMeasurements] = useState<Measurement[]>(
     [Measurement.Red]
-  );
+  )
 
   const datasets = useMemo<Dataset[]>(
     () => enabledMeasurements.map((m) => measurementsRecords[m]),
     [enabledMeasurements]
-  );
+  )
 
   return (
     <View
@@ -153,52 +154,39 @@ export default function App() {
       </View>
       {/* Measurement toggles */}
       {measurementKeys.map((measurement) => (
-        <View
-          key={measurement}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginVertical: 10,
-          }}
-        >
+        <View key={measurement} style={styles.switchContainer}>
           <Switch
             value={enabledMeasurements.includes(measurement)}
             onValueChange={() =>
               setEnabledMeasurements((prev) => {
                 if (!prev.includes(measurement))
                   // enable
-                  return prev.concat(measurement);
+                  return prev.concat(measurement)
 
                 if (prev.length !== 1)
                   // disable
-                  return prev.filter((m) => m !== measurement);
+                  return prev.filter((m) => m !== measurement)
 
                 // only one measurement was enabled, switch to next one
                 const currentIndex = measurementKeys.findIndex(
                   (m) => m === measurement
-                );
-                const nextIndex = (currentIndex + 1) % measurementKeys.length;
-                const nextMeasurement = measurementKeys[nextIndex]!;
+                )
+                const nextIndex = (currentIndex + 1) % measurementKeys.length
+                const nextMeasurement = measurementKeys[nextIndex]!
 
-                return [nextMeasurement];
+                return [nextMeasurement]
               })
             }
           />
-          <Text style={{ marginLeft: 10 }}>{measurement}</Text>
+          <Text style={styles.switchLabel}>{measurement}</Text>
         </View>
       ))}
     </View>
-  );
+  )
 }
 
-const PADDING = 20;
+const PADDING = 20
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#eee',
-  },
   holder: {
     width: '100%',
     flex: 1,
@@ -226,4 +214,10 @@ const styles = StyleSheet.create({
   timeDomainItemText: {
     fontSize: 13,
   },
-});
+  switchContainer: {
+    marginVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  switchLabel: { marginLeft: 10 },
+})

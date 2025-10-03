@@ -1,2 +1,2 @@
-declare const drawFunction: string;
-export default drawFunction;
+declare const drawFunction: string
+export default drawFunction

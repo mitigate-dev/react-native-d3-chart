@@ -15,7 +15,7 @@ function sample(data, count, domain) {
 
   if (length <= count) {
     return data.filter(
-      d => d.timestamp >= domainStart && d.timestamp <= domainEnd,
+      (d) => d.timestamp >= domainStart && d.timestamp <= domainEnd
     )
   }
 
@@ -27,7 +27,7 @@ function sample(data, count, domain) {
     data[0].timestamp +
     Math.floor(
       Math.floor((data[i].timestamp - data[0].timestamp) / batchLength) *
-        batchLength,
+        batchLength
     )
 
   const nullPointsBefore = []
@@ -119,7 +119,7 @@ function postMessage(type, payload) {
 
 function convertData(data) {
   const parseTime = d3.timeParse('%Q')
-  return data.map(d => ({
+  return data.map((d) => ({
     date: parseTime(d.timestamp),
     value: d.value,
   }))
@@ -156,7 +156,7 @@ function calculateYTickTextX(value, index, siblings) {
     0,
     exessSymbolCount(siblings[index - 1]),
     exessSymbolCount(siblings[index]),
-    exessSymbolCount(siblings[index + 1]),
+    exessSymbolCount(siblings[index + 1])
   )
   return (
     -yLabelMargin + // default x
@@ -185,8 +185,8 @@ function fromatYAxis(g, color, datasetIndex, width) {
 }
 
 function buildValueDomain(data, { minDeltaY, domain }) {
-  let min = d3.min(data, d => (d.value === null ? Infinity : d.value))
-  let max = d3.max(data, d => d.value)
+  let min = d3.min(data, (d) => (d.value === null ? Infinity : d.value))
+  let max = d3.max(data, (d) => d.value)
 
   if (domain) {
     min = Math.min(min, domain.bottom)
@@ -229,7 +229,6 @@ var x = undefined
 var wholeScaleX = undefined
 var zoom = undefined
 var colors = undefined
-var zoomEnabled = undefined
 var timeDomain = undefined
 
 /**
@@ -237,11 +236,11 @@ var timeDomain = undefined
  */
 var operators = {}
 
-window.draw = props => {
+window.draw = (props) => {
   try {
     d3.select('#my_dataviz').style('background', props.colors.background)
     d3.selectAll('.remove_me').remove()
-    Object.keys(operators).forEach(index => {
+    Object.keys(operators).forEach((index) => {
       if (!props.datasets[index]) {
         d3.select('g#y_axis' + index).remove()
         d3.select('path#area' + index).remove()
@@ -267,18 +266,18 @@ window.draw = props => {
     colors = props.colors
 
     var margin = {
-        top: 16,
-        right: 24 + props.marginHorizontal,
-        left: 24 + props.marginHorizontal,
-        bottom: 24,
-      },
-      width = props.width - margin.left - margin.right,
-      height =
-        props.height -
-        margin.top -
-        margin.bottom -
-        headerHeight -
-        24 * (props.datasets.length - 1)
+      top: 16,
+      right: 24 + props.marginHorizontal,
+      left: 24 + props.marginHorizontal,
+      bottom: 24,
+    }
+    var width = props.width - margin.left - margin.right
+    var height =
+      props.height -
+      margin.top -
+      margin.bottom -
+      headerHeight -
+      24 * (props.datasets.length - 1)
 
     if (typeof props.decimalSeparator === 'string') {
       d3.formatDefaultLocale({ decimal: props.decimalSeparator })
@@ -307,17 +306,17 @@ window.draw = props => {
         d3.timeSecond(date) < date
           ? formatMillisecond
           : d3.timeMinute(date) < date
-          ? formatSecond
-          : d3.timeHour(date) < date
-          ? formatMinute
-          : d3.timeDay(date) < date
-          ? formatHour
-          : d3.timeMonth(date) < date
-          ? // d3.timeWeek(date) < date? // move beginning of week to monday
-            formatDay //: formatWeek
-          : d3.timeYear(date) < date
-          ? formatMonth
-          : formatYear
+            ? formatSecond
+            : d3.timeHour(date) < date
+              ? formatMinute
+              : d3.timeDay(date) < date
+                ? formatHour
+                : d3.timeMonth(date) < date
+                  ? // d3.timeWeek(date) < date? // move beginning of week to monday
+                    formatDay // : formatWeek
+                  : d3.timeYear(date) < date
+                    ? formatMonth
+                    : formatYear
       )(date)
     }
 
@@ -326,7 +325,7 @@ window.draw = props => {
         .attr('width', width + margin.left + margin.right)
         .attr('height', height + margin.top + margin.bottom),
       'g',
-      'master',
+      'master'
     ).attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
 
     function getSampledData(data, x) {
@@ -342,11 +341,7 @@ window.draw = props => {
       return convertData(sample(data, width + zoomPixelPadding * 2, zoomDomain))
     }
 
-    const newScale =
-      !x ||
-      !wholeScaleX ||
-      !props.keepZoom
-    zoomEnabled = props.zoomEnabled
+    const newScale = !x || !wholeScaleX || !props.keepZoom
     timeDomain = props.timeDomain
     if (newScale) {
       x = d3
@@ -373,11 +368,11 @@ window.draw = props => {
 
     const chart = selectOrAppend(svg, 'g', 'chart').attr(
       'clip-path',
-      'url(#clip)',
+      'url(#clip)'
     )
 
     const getGradientOffset =
-      yScale =>
+      (yScale) =>
       ({ value }) =>
         (yScale(value) / (height + margin.top + margin.bottom)) * 100 + '%'
 
@@ -423,7 +418,7 @@ window.draw = props => {
         .enter()
         .append('stop')
         .attr('offset', getGradientOffset(y))
-        .attr('stop-opacity', d => d.opacity)
+        .attr('stop-opacity', (d) => d.opacity)
         .attr('stop-color', color)
 
       selectOrAppend(chart, 'path', 'area' + index)
@@ -438,9 +433,9 @@ window.draw = props => {
           d3
             .area()
             .defined(isDefined)
-            .x(d => x(d.date))
+            .x((d) => x(d.date))
             .y0(y(0))
-            .y1(d => y(d.value)),
+            .y1((d) => y(d.value))
         )
 
       selectOrAppend(chart, 'path', 'line' + index)
@@ -456,8 +451,8 @@ window.draw = props => {
           d3
             .line()
             .defined(isDefined)
-            .x(d => x(d.date))
-            .y(d => y(d.value)),
+            .x((d) => x(d.date))
+            .y((d) => y(d.value))
         )
     })
 
@@ -516,7 +511,7 @@ window.draw = props => {
         const highlightCroshair = selectOrAppend(
           selectOrAppend(svg, 'g', 'crosshair' + index),
           'circle',
-          'crosshair' + index,
+          'crosshair' + index
         )
           .attr('r', 5)
           .attr('opacity', 0)
@@ -537,10 +532,10 @@ window.draw = props => {
           .style('bottom', margin.bottom - 5 + 'px')
           .style(
             unitPositionKey,
-            margin[unitPositionKey] + width + yLabelMargin + 'px',
+            margin[unitPositionKey] + width + yLabelMargin + 'px'
           )
           .html(unit)
-      },
+      }
     )
 
     if (newScale) {
@@ -591,8 +586,8 @@ window.draw = props => {
             d3
               .line()
               .defined(isDefined)
-              .x(d => x(d.date))
-              .y(d => y(d.value)),
+              .x((d) => x(d.date))
+              .y((d) => y(d.value))
           )
 
         d3.select('path#area' + index)
@@ -604,9 +599,9 @@ window.draw = props => {
             d3
               .area()
               .defined(isDefined)
-              .x(d => x(d.date))
+              .x((d) => x(d.date))
               .y0(y(0))
-              .y1(d => y(d.value)),
+              .y1((d) => y(d.value))
           )
 
         svg
@@ -637,7 +632,7 @@ window.draw = props => {
               .axisBottom(newX)
               .ticks(6)
               .tickSize(-height)
-              .tickFormat(multiFormat),
+              .tickFormat(multiFormat)
           )
           .call(formatXAxis)
 
@@ -655,8 +650,8 @@ window.draw = props => {
               d3
                 .line()
                 .defined(isDefined)
-                .x(d => newX(d.date))
-                .y(d => y(d.value)),
+                .x((d) => newX(d.date))
+                .y((d) => y(d.value))
             )
 
           d3.select('path#area' + index)
@@ -666,9 +661,9 @@ window.draw = props => {
               d3
                 .area()
                 .defined(isDefined)
-                .x(d => newX(d.date))
+                .x((d) => newX(d.date))
                 .y0(y(0))
-                .y1(d => y(d.value)),
+                .y1((d) => y(d.value))
             )
         })
 
@@ -681,8 +676,15 @@ window.draw = props => {
     }
 
     function formatDate(date) {
-      const twoDigit = value => String(value).padStart(2, '0')
-      return twoDigit(date.getDate()) + '.' + twoDigit(date.getMonth() + 1) + '.' + date.getFullYear() + '.'
+      const twoDigit = (value) => String(value).padStart(2, '0')
+      return (
+        twoDigit(date.getDate()) +
+        '.' +
+        twoDigit(date.getMonth() + 1) +
+        '.' +
+        date.getFullYear() +
+        '.'
+      )
     }
 
     function updateHighlight(duration = 0) {
@@ -726,26 +728,24 @@ window.draw = props => {
           .html(
             tooFar
               ? props.noDataString
-              : d3.format('.' + decimals + 'f')(highlight.value) + ' ' + unit,
+              : d3.format('.' + decimals + 'f')(highlight.value) + ' ' + unit
           )
       })
 
       const date = highlightTime ?? highlightExactDate
 
-      timeholder.select('span#date').html(
-        formatDate(date),
-      )
+      timeholder.select('span#date').html(formatDate(date))
       timeholder.select('span#time').html(
         date.toLocaleString(props.locale, {
           hour: '2-digit',
           minute: '2-digit',
           hour12: false,
-        }),
+        })
       )
     }
 
     if (x.range()[1] !== width) {
-      const domain = x.domain().map(d => d.getTime())
+      const domain = x.domain().map((d) => d.getTime())
       x.range([0, width])
       wholeScaleX.range(x.range())
 
@@ -782,9 +782,9 @@ console.log = (...args) => {
     JSON.stringify({
       type: 'log',
       payload: args.length > 1 ? [...args] : args[0],
-    }),
+    })
   )
 }
 
 true
-`;
+`
