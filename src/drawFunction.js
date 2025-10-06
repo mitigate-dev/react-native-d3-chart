@@ -222,8 +222,10 @@ function getTickCount(domain, { minDeltaY }) {
   return tickCount
 }
 
+// TODO: Check why was avoiding needed. Condionally maybe?
+const avoidZeroAxisLabel = false
 function yFormat(value) {
-  if (value === 0) return ''
+  if (avoidZeroAxisLabel && value === 0) return ''
   const axisLabel = String(value)
   return axisLabel.length > yLabelMaxLength ? '' : axisLabel
 }
@@ -454,7 +456,7 @@ window.draw = (props) => {
             .area()
             .defined(isDefined)
             .x((d) => x(d.date))
-            .y0(y(0))
+            .y0(y(y.domain()[0]) + 1) // Use min value, +1 to avoid blinking space
             .y1((d) => y(d.value))
         )
 
@@ -661,7 +663,7 @@ window.draw = (props) => {
               .area()
               .defined(isDefined)
               .x((d) => x(d.date))
-              .y0(y(0))
+              .y0(y(y.domain()[0]) + 1) // Use min value, +1 to avoid blinking space
               .y1((d) => y(d.value))
           )
 
@@ -734,7 +736,7 @@ window.draw = (props) => {
                 .area()
                 .defined(isDefined)
                 .x((d) => newX(d.date))
-                .y0(y(0))
+                .y0(y(y.domain()[0]) + 1) // Use min value, +1 to avoid blinking space
                 .y1((d) => y(d.value))
             )
         })
