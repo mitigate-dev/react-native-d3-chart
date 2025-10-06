@@ -222,10 +222,7 @@ function getTickCount(domain, { minDeltaY }) {
   return tickCount
 }
 
-// TODO: Check why was avoiding needed. Condionally maybe?
-const avoidZeroAxisLabel = false
 function yFormat(value) {
-  if (avoidZeroAxisLabel && value === 0) return ''
   const axisLabel = String(value)
   return axisLabel.length > yLabelMaxLength ? '' : axisLabel
 }
@@ -592,7 +589,10 @@ window.draw = (props) => {
           .style('color', dataset.axisColor ?? color)
           .style('font-size', '10px')
           .style('position', 'absolute')
-          .style('bottom', margin.bottom - 5 + 'px')
+          .style(
+            'bottom',
+            margin.bottom - 10 * (Math.floor(index / 2) + 1) + 'px'
+          )
           .style(
             unitPositionKey,
             margin[unitPositionKey] + width + yLabelMargin + 'px'
