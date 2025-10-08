@@ -453,7 +453,7 @@ window.draw = (props) => {
             .area()
             .defined(isDefined)
             .x((d) => x(d.date))
-            .y0(y(y.domain()[0]) + 1) // Use min value, +1 to avoid blinking space
+            .y0(y(y.domain()[0]) + 1) // NOTE: +1 prevents a weird hairline at the bottom (just above axis)
             .y1((d) => y(d.value))
         )
 
@@ -464,20 +464,18 @@ window.draw = (props) => {
         .attr('stroke-width', 2)
 
       if (dataset.color.type === 'thresholds') {
-        const { baseColor, gradientBlur, thresholds } = dataset.color
-        const stops = []
-        thresholds.forEach(({ value, color }, index) => {
-          stops.push(
-            {
-              value: value + gradientBlur,
-              color: color,
-            },
-            {
-              value: value - gradientBlur,
-              color: thresholds[index + 1]?.color ?? baseColor,
-            }
-          )
-        })
+        const { baseColor, gradientBlur = 0, thresholds } = dataset.color
+        const stops = thresholds.flatMap(({ value, color }, index) => [
+          {
+            value: value + gradientBlur,
+            color: color,
+          },
+          {
+            value: value - gradientBlur,
+            // NOTE: All thresholds have color. index out of bounds - last threshold - use baseColor
+            color: thresholds[index + 1]?.color ?? baseColor,
+          },
+        ])
 
         defs
           .append('linearGradient')
@@ -663,7 +661,7 @@ window.draw = (props) => {
               .area()
               .defined(isDefined)
               .x((d) => x(d.date))
-              .y0(y(y.domain()[0]) + 1) // Use min value, +1 to avoid blinking space
+              .y0(y(y.domain()[0]) + 1) // NOTE: +1 prevents a weird hairline at the bottom (just above axis)
               .y1((d) => y(d.value))
           )
 
@@ -736,7 +734,7 @@ window.draw = (props) => {
                 .area()
                 .defined(isDefined)
                 .x((d) => newX(d.date))
-                .y0(y(y.domain()[0]) + 1) // Use min value, +1 to avoid blinking space
+                .y0(y(y.domain()[0]) + 1) // NOTE: +1 prevents a weird hairline at the bottom (just above axis)
                 .y1((d) => y(d.value))
             )
         })

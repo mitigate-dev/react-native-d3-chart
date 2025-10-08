@@ -62,7 +62,7 @@ const measurementsRecords: Record<Measurement, Dataset> = {
       startingValue: -8,
     }),
     decimals: 0,
-    areaColor: '#ff00ff', // '#83cba8',
+    areaColor: '#83cba8',
     color: {
       type: 'thresholds',
       baseColor: '#3d91ff',

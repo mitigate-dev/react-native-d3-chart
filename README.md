@@ -145,11 +145,11 @@ type Dataset = {
 type ThresholdColor = {
   type: 'thresholds'
   baseColor: string // Default color for values below all thresholds
-  gradientBlur: number // Gradient transition distance around thresholds
   thresholds: Array<{
     value: number // Threshold value
     color: string // Color to use above this value
   }> // Should be sorted by value descending
+  gradientBlur?: number // Gradient transition distance around thresholds. Default 0 - no blur
 }
 ```
 
@@ -231,11 +231,11 @@ const datasetWithThresholds = {
   areaColor: '#e78e96', // Optional: custom area fill color
   color: {
     type: 'thresholds',
-    baseColor: '#089851', // Green for values below all thresholds (low load)
-    gradientBlur: 50, // Smooth transition distance around thresholds
+    baseColor: '#00FF00', // Green for values below all thresholds (low load)
+    gradientBlur: 5, // Smooth transition distance around thresholds
     thresholds: [
-      { value: 85, color: '#CF1E2E' }, // Red for values >= 85% (critical)
-      { value: 50, color: '#F29400' }, // Orange for values >= 50% (warning)
+      { value: 85, color: '#FF0000' }, // Red for values >= 85% (critical)
+      { value: 50, color: '#FF9400' }, // Orange for values >= 50% (warning)
       // Values < 50% will use baseColor (green)
     ],
   },
@@ -246,9 +246,9 @@ const datasetWithThresholds = {
 **How it works:**
 
 - **Thresholds should be sorted by value in descending order**
-- Values >= 85% will be colored red (`#CF1E2E`) - critical load
-- Values >= 50% but < 80% will be colored orange (`#F29400`) - warning load
-- Values < 50% will use the `baseColor` green (`#089851`) - healthy load
+- Values >= 85% will be colored red (`#FF0000`) - critical load
+- Values >= 50% but < 80% will be colored orange (`#FF9400`) - warning load
+- Values < 50% will use the `baseColor` green (`#00FF00`) - healthy load
 - The `gradientBlur` creates smooth color transitions around threshold boundaries
 
 **Real-world examples:**

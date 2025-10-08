@@ -16,17 +16,24 @@ export type CalendarStrings = {
   shortMonths: string[]
 }
 
+type ThresholdColor = {
+  type: 'thresholds'
+  baseColor: string
+  /**
+   * Must be sorted by value descending (highest value first)
+   */
+  thresholds: { value: number; color: string }[]
+  /**
+   * Gradient transition distance around thresholds.
+   * Must be non-negative. Should be less than half the distance between thresholds.
+   * @default 0 - no blur
+   */
+  gradientBlur?: number
+}
+
 export type Dataset = {
   measurementName: string
-  color:
-    | string
-    | {
-        type: 'thresholds'
-        baseColor: string
-        gradientBlur: number
-        /* should be sorted by value descending */
-        thresholds: { value: number; color: string }[]
-      }
+  color: string | ThresholdColor
   points: Point[]
   unit: string
   decimals: number
