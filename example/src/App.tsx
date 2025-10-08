@@ -20,6 +20,7 @@ const chartColors: ChartProps['colors'] = {
 const generateDataPoints = ({
   startingValue = 400,
   minimum = 0,
+  maximum = 3000,
   radomFactor = 20,
 } = {}) => {
   const points = []
@@ -31,9 +32,10 @@ const generateDataPoints = ({
     const randomVariation = (Math.random() - 0.5) * radomFactor
     value += randomVariation
 
-    // randomVariation was negative and value went below minimum
-    if (value < minimum) {
-      // invert direction to keep above minimum
+    // either randomVariation was negative and value went below minimum
+    // or     randomVariation was positive and value went above maximum
+    if (value < minimum || value > maximum) {
+      // invert direction to keep within bounds
       value -= 2 * randomVariation
     }
 
@@ -44,19 +46,36 @@ const generateDataPoints = ({
 }
 
 enum Measurement {
-  Red = 'Red',
+  Temperature = 'Temperature',
   Blue = 'Blue',
   Green = 'Green',
   Pink = 'Pink',
 }
 const measurementKeys = Object.values(Measurement)
 const measurementsRecords: Record<Measurement, Dataset> = {
-  [Measurement.Red]: {
+  [Measurement.Temperature]: {
     unit: '°C',
-    points: generateDataPoints(),
+    points: generateDataPoints({
+      maximum: 40,
+      minimum: -10,
+      radomFactor: 1,
+      startingValue: -8,
+    }),
     decimals: 0,
-    color: '#e66',
-    measurementName: Measurement.Red,
+    areaColor: '#83cba8',
+    color: {
+      type: 'thresholds',
+      baseColor: '#3d91ff',
+      gradientBlur: 2,
+      thresholds: [
+        { value: 32, color: '#bb2222' },
+        { value: 24, color: '#ffc400' },
+        { value: 16, color: '#089851' },
+        { value: 10, color: '#9ceeff' },
+        { value: 0, color: '#00d5ff' },
+      ],
+    },
+    measurementName: Measurement.Temperature,
   },
   [Measurement.Blue]: {
     unit: 'l',
@@ -114,7 +133,7 @@ export default function App() {
   }, [timeDomainType])
 
   const [enabledMeasurements, setEnabledMeasurements] = useState<Measurement[]>(
-    [Measurement.Red]
+    [Measurement.Temperature]
   )
 
   const datasets = useMemo<Dataset[]>(
