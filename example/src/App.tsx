@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react'
 import { View, StyleSheet, TouchableOpacity, Text, Switch } from 'react-native'
 
-import Chart, { ChartProps, Dataset } from 'react-native-d3-chart'
+import Chart, { ChartProps, Dataset, Point } from 'react-native-d3-chart'
+
+import { generateRandomPulses } from './helpers/generateRandomPulses'
 
 type TimeDomainType = 'hour' | 'day' | 'week' | 'month'
 
@@ -50,7 +52,18 @@ enum Measurement {
   Blue = 'Blue',
   Green = 'Green',
   Pink = 'Pink',
+  Pulses = 'Pulses',
+  PulseRate = 'Pulse Rate',
 }
+
+const averagePulseRatePerHour = 120
+const pulsePoints = generateRandomPulses({
+  maxAgeDays: 60,
+  burstFactor: 10,
+  burstProbability: 0.05,
+  averageRatePerHour: averagePulseRatePerHour,
+})
+
 const measurementKeys = Object.values(Measurement)
 const measurementsRecords: Record<Measurement, Dataset> = {
   [Measurement.Temperature]: {
@@ -62,7 +75,7 @@ const measurementsRecords: Record<Measurement, Dataset> = {
       startingValue: -8,
     }),
     decimals: 0,
-    areaColor: '#83cba8',
+    areaColor: '#c4deff',
     color: {
       type: 'thresholds',
       baseColor: '#3d91ff',
@@ -104,6 +117,110 @@ const measurementsRecords: Record<Measurement, Dataset> = {
     decimals: 1,
     color: '#e0e',
     measurementName: Measurement.Pink,
+  },
+
+  [Measurement.PulseRate]: {
+    unit: 'pulses/h',
+    points: pulsePoints.map(({ timestamp }, index, array) => {
+      const slice = [...array.slice(Math.max(0, index - 60 + 1), index + 1)] // this and previous 59 minutes
+      const hourSum = slice.reduce((sum, point) => sum + (point.value || 0), 0)
+
+      return {
+        timestamp,
+        value: hourSum,
+      }
+    }),
+    slices: {
+      start: pulsePoints[0]?.timestamp ?? 0,
+      end: pulsePoints[pulsePoints.length - 1]?.timestamp ?? 0,
+      items: [
+        {
+          color: '#08985115',
+          start: { bottom: 0, top: averagePulseRatePerHour },
+          end: { bottom: 0, top: averagePulseRatePerHour },
+        },
+        {
+          color: '#ffc40015',
+          start: {
+            bottom: averagePulseRatePerHour,
+            top: averagePulseRatePerHour * 1.1,
+          },
+          end: {
+            bottom: averagePulseRatePerHour,
+            top: averagePulseRatePerHour * 1.1,
+          },
+        },
+        {
+          color: '#bb222215',
+          start: {
+            bottom: averagePulseRatePerHour * 1.1,
+            top: averagePulseRatePerHour * 10,
+          },
+          end: {
+            bottom: averagePulseRatePerHour * 1.1,
+            top: averagePulseRatePerHour * 10,
+          },
+        },
+      ],
+    },
+    decimals: 0,
+    color: '#000',
+    areaColor: null,
+    measurementName: Measurement.PulseRate,
+  },
+  [Measurement.Pulses]: {
+    unit: 'pulses',
+    points: pulsePoints.reduce(
+      ({ array, sum }, { timestamp, value }) => {
+        const newSum = sum + (value || 0)
+        array.push({ timestamp, value: newSum })
+        return {
+          array,
+          sum: newSum,
+        }
+      },
+      { array: [] as Point[], sum: 0 }
+    ).array,
+    decimals: 0,
+    color: '#000',
+    areaColor: null,
+    measurementName: 'Pulses cumulative',
+    slices: (() => {
+      const start = pulsePoints[0]?.timestamp ?? 0
+      const end = pulsePoints[pulsePoints.length - 1]?.timestamp ?? 0
+      const dataDurationMs = end - start
+      const dataDurationHours = dataDurationMs / (60 * 60 * 1000)
+
+      const warningRate = averagePulseRatePerHour
+      const dangerRate = warningRate * 1.1
+
+      const warningEnd = dataDurationHours * warningRate
+      const dangerEnd = dataDurationHours * dangerRate
+
+      const topEdge = dangerRate * 2 * dataDurationHours
+
+      return {
+        end,
+        start,
+        items: [
+          {
+            color: '#08985115',
+            start: { bottom: 0, top: 0 },
+            end: { bottom: 0, top: warningEnd },
+          },
+          {
+            color: '#ffc40015',
+            start: { bottom: 0, top: 0 },
+            end: { bottom: warningEnd, top: dangerEnd },
+          },
+          {
+            color: '#bb222215',
+            start: { bottom: 0, top: topEdge },
+            end: { bottom: dangerEnd, top: topEdge },
+          },
+        ],
+      }
+    })(),
   },
 }
 

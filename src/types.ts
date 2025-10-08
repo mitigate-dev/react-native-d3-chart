@@ -31,14 +31,30 @@ type ThresholdColor = {
   gradientBlur?: number
 }
 
+type Slices = {
+  end: Point['timestamp']
+  start: Point['timestamp']
+  items: {
+    color: string
+    end: { top: Point['value']; bottom: Point['value'] }
+    start: { top: Point['value']; bottom: Point['value'] }
+  }[]
+}
+
 export type Dataset = {
   measurementName: string
   color: string | ThresholdColor
   points: Point[]
   unit: string
   decimals: number
+  slices?: Slices
   minDeltaY?: number
-  areaColor?: string
+  /**
+   * Background fill color below the line (area chart)
+   * Set to null to disable area fill.
+   * @default undefined will use `color` with reduced opacity
+   */
+  areaColor?: string | null
   axisColor?: string
   decimalSeparator?: '.' | ','
   domain?: { bottom: number; top: number }

@@ -132,14 +132,25 @@ type Dataset = {
   unit: string // Unit symbol (e.g., '°C', 'kg', 'm/s')
   decimals: number // Number of decimal places to show
   minDeltaY?: number // Minimum Y-axis change to show, limit Y-zoom
-  areaColor?: string // Optional area fill color (defaults to base color)
+  areaColor?: string | null // Area fill color (null to disable, defaults to base color)
   axisColor?: string // Optional Y-axis text color (defaults to base color)
+  slices?: Slices // Optional background regions/zones
   decimalSeparator?: '.' | ',' // Decimal separator
   domain?: {
     // Custom Y-axis range
     bottom: number
     top: number
   }
+}
+
+type Slices = {
+  start: number // Start timestamp for the slices
+  end: number // End timestamp for the slices
+  items: Array<{
+    color: string // Background color (use alpha for transparency)
+    start: { top: number; bottom: number } // Y-values at start time
+    end: { top: number; bottom: number } // Y-values at end time
+  }>
 }
 
 type ThresholdColor = {
@@ -257,6 +268,48 @@ const datasetWithThresholds = {
 - **Performance metrics**: Red (poor) → Yellow (acceptable) → Green (excellent)
 - **Battery levels**: Red (critical) → Orange (low) → Green (healthy)
 - **Network latency**: Green (fast) → Yellow (moderate) → Red (slow)
+
+### Background Slices/Zones
+
+Add colored background regions to highlight acceptable ranges, warning zones, or targets:
+
+```tsx
+const datasetWithSlices = {
+  measurementName: 'CPU Usage',
+  color: '#333',
+  unit: '%',
+  decimals: 1,
+  points: cpuData,
+  slices: {
+    start: startTimestamp,
+    end: endTimestamp,
+    items: [
+      {
+        color: '#00FF0020', // Green with transparency (healthy zone)
+        start: { bottom: 0, top: 50 },
+        end: { bottom: 0, top: 50 },
+      },
+      {
+        color: '#FFA50020', // Orange with transparency (warning zone)
+        start: { bottom: 50, top: 80 },
+        end: { bottom: 50, top: 80 },
+      },
+      {
+        color: '#FF000020', // Red with transparency (critical zone)
+        start: { bottom: 80, top: 100 },
+        end: { bottom: 80, top: 100 },
+      },
+    ],
+  },
+}
+```
+
+**Features:**
+
+- **Horizontal zones**: Use same top/bottom values for start and end
+- **Diagonal zones**: Use different values to create slanted regions
+- **Transparency**: Use alpha channel (e.g., `#FF000020`) for subtle backgrounds
+- **Multiple regions**: Stack different colored zones for complex visualizations
 
 ### Zoom Callbacks
 
