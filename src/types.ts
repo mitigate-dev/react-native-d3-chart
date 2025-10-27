@@ -42,22 +42,32 @@ export type Slices = {
 }
 
 export type Dataset = {
+  unit: string
+  points: Point[]
+  decimals: number
   measurementName: string
   color: string | ThresholdColor
-  points: Point[]
-  unit: string
-  decimals: number
   slices?: Slices
   minDeltaY?: number
+  axisColor?: string
   /**
    * Background fill color below the line (area chart)
    * Set to null to disable area fill.
    * @default undefined will use `color` with reduced opacity
    */
   areaColor?: string | null
-  axisColor?: string
   decimalSeparator?: '.' | ','
+  /**
+   * Override Y axis domain (min/max values)
+   */
   domain?: { bottom: number; top: number }
+}
+
+export type ErrorSegment = {
+  message: string
+  messageColor: string
+  end: Point['timestamp']
+  start: Point['timestamp']
 }
 
 export type ChartProps = {
@@ -70,6 +80,7 @@ export type ChartProps = {
   locale?: string
   zoomEnabled?: boolean
   marginHorizontal?: number
+  errorSegments?: ErrorSegment[]
   calendarStrings?: CalendarStrings
   onZoomEnded?: () => void
   onZoomStarted?: () => void

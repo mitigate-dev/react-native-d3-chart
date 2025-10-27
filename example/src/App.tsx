@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { View, StyleSheet, TouchableOpacity, Text, Switch } from 'react-native'
 
-import Chart, { ChartProps, Dataset } from 'react-native-d3-chart'
+import Chart, { ChartProps, Dataset, ErrorSegment } from 'react-native-d3-chart'
 
 import { buildSlices } from './helpers/buildSlices'
 import { generateTimeSeriesData } from './helpers/generateTimeSeriesData'
@@ -138,9 +138,49 @@ export default function App() {
     [Measurement.Temperature]
   )
 
+  const errorSegments = useMemo<ErrorSegment[]>(() => {
+    const now = Date.now()
+    return [
+      {
+        message: 'Unknown error',
+        messageColor: '#f0f',
+        start: now - 50 * 60 * 1000,
+        end: now - 40 * 60 * 1000,
+      },
+      {
+        message: 'No data yet',
+        messageColor: '#b22',
+        start: now - 2 * 60 * 1000,
+        end: now + 15 * 60 * 1000,
+      },
+    ]
+  }, [])
+
   const datasets = useMemo<Dataset[]>(
-    () => enabledMeasurements.map((m) => measurementsRecords[m]),
-    [enabledMeasurements]
+    () =>
+      enabledMeasurements.map((enabledMeasurement, index) => {
+        const data = measurementsRecords[enabledMeasurement]
+        if (index !== 0) return data
+
+        const firstErrorSegment = errorSegments[0]
+        if (!firstErrorSegment) return data
+
+        // invalidate points within first error segment for the first measurement for demo purposes
+        return {
+          ...data,
+          decimalSeparator: ',',
+          decimals: 2,
+          points: data.points.map((point) => ({
+            timestamp: point.timestamp,
+            value:
+              point.timestamp - 60 * 1000 > firstErrorSegment.start &&
+              point.timestamp + 60 * 1000 < firstErrorSegment.end
+                ? null
+                : point.value,
+          })),
+        }
+      }),
+    [enabledMeasurements, errorSegments]
   )
 
   return (
@@ -156,6 +196,7 @@ export default function App() {
         colors={chartColors}
         timeDomain={timeDomain}
         marginHorizontal={PADDING}
+        errorSegments={errorSegments}
         noDataString="No data available"
       />
       <View style={styles.spacer} />

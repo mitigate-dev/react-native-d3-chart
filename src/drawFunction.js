@@ -108,6 +108,11 @@ function findClosest(data, target) {
   return finalIx
 }
 
+function getClosest(data, target) {
+  const closestIndex = findClosest(data, target)
+  return data[closestIndex]
+}
+
 function postMessage(type, payload) {
   if (window.ReactNativeWebView) {
     window.ReactNativeWebView.postMessage(JSON.stringify({ type, payload }))
@@ -380,10 +385,60 @@ window.draw = (props) => {
       .attr('x', 0)
       .attr('y', 0)
 
+    defs
+      .append('linearGradient')
+      .attr('id', 'error-gradient')
+      .attr('gradientUnits', 'userSpaceOnUse')
+      .attr('x1', 0)
+      .attr('x2', 0)
+      .attr('y1', 0)
+      .attr('y2', height)
+      .selectAll('stop')
+      .data([
+        { offset: '0%', opacity: 0 },
+        { offset: '100%', opacity: 0.1 },
+      ])
+      .enter()
+      .append('stop')
+      .attr('offset', (d) => d.offset)
+      .attr('stop-opacity', (d) => d.opacity)
+      .attr('stop-color', '#000000')
+
     const chart = selectOrAppend(svg, 'g', 'chart').attr(
       'clip-path',
       'url(#clip)'
     )
+
+    var drawErrorSegments = () => {
+      const errorSegmentsHolder = selectOrAppend(
+        chart,
+        'g',
+        'errorSegmentsHolder'
+      )
+      errorSegmentsHolder.selectAll('rect').remove()
+      if (!props.errorSegments?.length) return
+
+      try {
+        const parseTime = d3.timeParse('%Q')
+        errorSegmentsHolder
+          .selectAll('rect')
+          .data(
+            props.errorSegments.map(({ start, end }) => ({
+              startDate: parseTime(start),
+              endDate: parseTime(end),
+            }))
+          )
+          .enter()
+          .append('rect')
+          .attr('fill', 'url(#error-gradient)')
+          .attr('height', height)
+          .attr('width', (d) => x(d.endDate) - x(d.startDate))
+          .attr('x', (d) => x(d.startDate))
+      } catch (e) {
+        postMessage('error segment update error', e.message)
+      }
+    }
+    drawErrorSegments()
 
     const getGradientOffset =
       (yScale) =>
@@ -445,7 +500,7 @@ window.draw = (props) => {
             opacity: 0.223958 * baseOpacity,
           },
           { value: y.domain()[0], opacity: 0 },
-        ] 
+        ]
         defs
           .append('linearGradient')
           .attr('id', 'area-gradient' + index)
@@ -767,6 +822,7 @@ window.draw = (props) => {
 
         updateHighlight()
         updateSlices()
+        drawErrorSegments()
       } catch (e) {
         postMessage('zoomerror', e.message)
       }
@@ -788,6 +844,10 @@ window.draw = (props) => {
       const x0 = width * highlightPosition
       const highlightExactDate = x.invert(x0)
 
+      const highlightedErrorSegment = props.errorSegments?.find(
+        (s) => s.start < highlightExactDate && s.end > highlightExactDate
+      )
+
       var highlightTime = null
       props.datasets.forEach((dataset, index) => {
         const { unit, decimals } = dataset
@@ -802,19 +862,25 @@ window.draw = (props) => {
           return
         }
 
-        const pointIndex = findClosest(definedData, highlightExactDate)
-        const highlight = definedData[pointIndex]
-
+        const highlight = getClosest(definedData, highlightExactDate)
         const xValue = x(highlight.date)
 
-        const tooFar =
-          Math.abs(x0 - xValue) > 8 &&
+        const is10MinutesAway =
           Math.abs(highlightExactDate - highlight.date) > 10 * 60 * 1000
+        const is8PixelsAway = Math.abs(x0 - xValue) > 8
 
-        const color = getDatasetColor(
-          dataset,
-          tooFar ? undefined : highlight.value
-        )
+        // Closest defined point is more than 10 minutes away, or we are in error segment + closest _unfiltered_ point is null
+        const tooFar =
+          is8PixelsAway &&
+          (is10MinutesAway ||
+            (!!highlightedErrorSegment &&
+              getClosest(operators[index].domainData, highlightExactDate)
+                ?.value === null))
+        const isInErrorSegment = highlightedErrorSegment && tooFar
+
+        const color = isInErrorSegment
+          ? highlightedErrorSegment.messageColor
+          : getDatasetColor(dataset, tooFar ? undefined : highlight.value)
 
         if (!tooFar) {
           highlightTime = highlight.date
@@ -832,9 +898,11 @@ window.draw = (props) => {
           .select('span#highlightvalue' + index)
           .style('color', color)
           .html(
-            tooFar
-              ? props.noDataString
-              : d3.format('.' + decimals + 'f')(highlight.value) + ' ' + unit
+            isInErrorSegment
+              ? highlightedErrorSegment.message
+              : tooFar
+                ? props.noDataString
+                : d3.format('.' + decimals + 'f')(highlight.value) + ' ' + unit
           )
       })
 

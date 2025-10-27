@@ -4,6 +4,7 @@ export {
   type Dataset,
   type ChartProps,
   type TimeDomain,
+  type ErrorSegment,
   type CalendarStrings,
 } from './types'
 

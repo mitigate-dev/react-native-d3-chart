@@ -9,6 +9,7 @@ import {
   type ChartProps,
   type TimeDomain,
   type ChartColors,
+  type ErrorSegment,
   type CalendarStrings,
 } from './types'
 
@@ -26,6 +27,7 @@ type HtmlProps = {
   timeDomain: TimeDomain
   marginHorizontal: number
   calendar?: CalendarStrings
+  errorSegments?: ErrorSegment[]
 }
 
 export default function Chart({
@@ -35,6 +37,7 @@ export default function Chart({
   timeDomain,
   zoomEnabled,
   noDataString,
+  errorSegments,
   calendarStrings,
   colors: chartColors,
   locale = 'en',
@@ -64,6 +67,7 @@ export default function Chart({
       datasets,
       timeDomain,
       noDataString,
+      errorSegments,
       marginHorizontal,
       calendar: calendarStrings,
       zoomEnabled: !!zoomEnabled,
@@ -95,6 +99,7 @@ export default function Chart({
     chartColors,
     zoomEnabled,
     noDataString,
+    errorSegments,
     calendarStrings,
     marginHorizontal,
   ])
