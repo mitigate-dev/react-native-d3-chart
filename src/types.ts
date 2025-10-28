@@ -31,7 +31,7 @@ type ThresholdColor = {
   gradientBlur?: number
 }
 
-type Slices = {
+export type Slices = {
   end: Point['timestamp']
   start: Point['timestamp']
   items: {

@@ -1,3 +1,12 @@
+/**
+ * Generates random pulse data points over a specified time range.
+ * @param maxAgeDays - The maximum age of the data points in days.
+ * @param intervalMs - Time interval in milliseconds between consecutive data points. Default is 60,000 ms (1 minute).
+ * @param averageRatePerHour - Average number of pulses per hour. Default is 120.
+ * @param burstFactor - Factor by which the pulse rate increases during bursts. Default is 3.
+ * @param burstProbability - Probability of a burst occurring at each interval. Default is 0.1.
+ * @returns An array of random pulse data points.
+ */
 export function generateRandomPulses({
   maxAgeDays = 30,
   intervalMs = 60 * 1000,

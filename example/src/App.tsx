@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from 'react'
 import { View, StyleSheet, TouchableOpacity, Text, Switch } from 'react-native'
 
-import Chart, { ChartProps, Dataset, Point } from 'react-native-d3-chart'
+import Chart, { ChartProps, Dataset } from 'react-native-d3-chart'
 
-import { generateRandomPulses } from './helpers/generateRandomPulses'
+import { buildSlices } from './helpers/buildSlices'
+import { generateTimeSeriesData } from './helpers/generateTimeSeriesData'
+import { temperatureData, visits } from './mockData'
 
 type TimeDomainType = 'hour' | 'day' | 'week' | 'month'
 
@@ -18,62 +20,20 @@ const chartColors: ChartProps['colors'] = {
   highlightTime: '#444',
 }
 
-// Generate data points every minute from a month ago to now
-const generateDataPoints = ({
-  startingValue = 400,
-  minimum = 0,
-  maximum = 3000,
-  radomFactor = 20,
-} = {}) => {
-  const points = []
-  const now = Date.now()
-  const monthAgo = now - 30 * 24 * 60 * 60 * 1000 // 30 days ago
-  let value = startingValue
-
-  for (let timestamp = monthAgo; timestamp <= now; timestamp += 60 * 1000) {
-    const randomVariation = (Math.random() - 0.5) * radomFactor
-    value += randomVariation
-
-    // either randomVariation was negative and value went below minimum
-    // or     randomVariation was positive and value went above maximum
-    if (value < minimum || value > maximum) {
-      // invert direction to keep within bounds
-      value -= 2 * randomVariation
-    }
-
-    points.push({ timestamp, value })
-  }
-
-  return points
-}
-
 enum Measurement {
   Temperature = 'Temperature',
   Blue = 'Blue',
   Green = 'Green',
   Pink = 'Pink',
-  Pulses = 'Pulses',
-  PulseRate = 'Pulse Rate',
+  Visits = 'Visits',
+  VisitRate = 'Visit Rate',
 }
-
-const averagePulseRatePerHour = 120
-const pulsePoints = generateRandomPulses({
-  maxAgeDays: 60,
-  burstFactor: 10,
-  burstProbability: 0.05,
-  averageRatePerHour: averagePulseRatePerHour,
-})
 
 const measurementKeys = Object.values(Measurement)
 const measurementsRecords: Record<Measurement, Dataset> = {
   [Measurement.Temperature]: {
     unit: '°C',
-    points: generateDataPoints({
-      maximum: 40,
-      minimum: -10,
-      radomFactor: 1,
-      startingValue: -8,
-    }),
+    points: temperatureData,
     decimals: 0,
     areaColor: '#c4deff',
     color: {
@@ -92,7 +52,7 @@ const measurementsRecords: Record<Measurement, Dataset> = {
   },
   [Measurement.Blue]: {
     unit: 'l',
-    points: generateDataPoints({
+    points: generateTimeSeriesData({
       startingValue: 160,
       minimum: 50,
       radomFactor: 6,
@@ -103,14 +63,14 @@ const measurementsRecords: Record<Measurement, Dataset> = {
   },
   [Measurement.Green]: {
     unit: 'kg',
-    points: generateDataPoints(),
+    points: generateTimeSeriesData(),
     decimals: 0,
     color: '#6e6',
     measurementName: Measurement.Green,
   },
   [Measurement.Pink]: {
     unit: 'm/s',
-    points: generateDataPoints({
+    points: generateTimeSeriesData({
       startingValue: 20,
       minimum: 100,
     }),
@@ -119,108 +79,33 @@ const measurementsRecords: Record<Measurement, Dataset> = {
     measurementName: Measurement.Pink,
   },
 
-  [Measurement.PulseRate]: {
-    unit: 'pulses/h',
-    points: pulsePoints.map(({ timestamp }, index, array) => {
-      const slice = [...array.slice(Math.max(0, index - 60 + 1), index + 1)] // this and previous 59 minutes
-      const hourSum = slice.reduce((sum, point) => sum + (point.value || 0), 0)
-
-      return {
-        timestamp,
-        value: hourSum,
-      }
+  [Measurement.VisitRate]: {
+    unit: 'visits/h',
+    points: visits.movingAveregeData,
+    slices: buildSlices('horizontal', {
+      end: visits.latestTimestamp,
+      start: visits.oldestTimestamp,
+      yellowThreshold: visits.averageVisitRatePerHour,
+      redThreshold: visits.averageVisitRatePerHour * 1.1,
     }),
-    slices: {
-      start: pulsePoints[0]?.timestamp ?? 0,
-      end: pulsePoints[pulsePoints.length - 1]?.timestamp ?? 0,
-      items: [
-        {
-          color: '#08985115',
-          start: { bottom: 0, top: averagePulseRatePerHour },
-          end: { bottom: 0, top: averagePulseRatePerHour },
-        },
-        {
-          color: '#ffc40015',
-          start: {
-            bottom: averagePulseRatePerHour,
-            top: averagePulseRatePerHour * 1.1,
-          },
-          end: {
-            bottom: averagePulseRatePerHour,
-            top: averagePulseRatePerHour * 1.1,
-          },
-        },
-        {
-          color: '#bb222215',
-          start: {
-            bottom: averagePulseRatePerHour * 1.1,
-            top: averagePulseRatePerHour * 10,
-          },
-          end: {
-            bottom: averagePulseRatePerHour * 1.1,
-            top: averagePulseRatePerHour * 10,
-          },
-        },
-      ],
-    },
     decimals: 0,
     color: '#000',
     areaColor: null,
-    measurementName: Measurement.PulseRate,
+    measurementName: Measurement.VisitRate,
   },
-  [Measurement.Pulses]: {
+  [Measurement.Visits]: {
     unit: 'pulses',
-    points: pulsePoints.reduce(
-      ({ array, sum }, { timestamp, value }) => {
-        const newSum = sum + (value || 0)
-        array.push({ timestamp, value: newSum })
-        return {
-          array,
-          sum: newSum,
-        }
-      },
-      { array: [] as Point[], sum: 0 }
-    ).array,
+    points: visits.culmulativeData,
     decimals: 0,
     color: '#000',
     areaColor: null,
-    measurementName: 'Pulses cumulative',
-    slices: (() => {
-      const start = pulsePoints[0]?.timestamp ?? 0
-      const end = pulsePoints[pulsePoints.length - 1]?.timestamp ?? 0
-      const dataDurationMs = end - start
-      const dataDurationHours = dataDurationMs / (60 * 60 * 1000)
-
-      const warningRate = averagePulseRatePerHour
-      const dangerRate = warningRate * 1.1
-
-      const warningEnd = dataDurationHours * warningRate
-      const dangerEnd = dataDurationHours * dangerRate
-
-      const topEdge = dangerRate * 2 * dataDurationHours
-
-      return {
-        end,
-        start,
-        items: [
-          {
-            color: '#08985115',
-            start: { bottom: 0, top: 0 },
-            end: { bottom: 0, top: warningEnd },
-          },
-          {
-            color: '#ffc40015',
-            start: { bottom: 0, top: 0 },
-            end: { bottom: warningEnd, top: dangerEnd },
-          },
-          {
-            color: '#bb222215',
-            start: { bottom: 0, top: topEdge },
-            end: { bottom: dangerEnd, top: topEdge },
-          },
-        ],
-      }
-    })(),
+    measurementName: 'Visits cumulative',
+    slices: buildSlices('axial', {
+      end: visits.latestTimestamp,
+      start: visits.oldestTimestamp,
+      yellowThreshold: visits.averageVisitRatePerHour,
+      redThreshold: visits.averageVisitRatePerHour * 1.1,
+    }),
   },
 }
 
