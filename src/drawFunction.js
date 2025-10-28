@@ -404,6 +404,24 @@ window.draw = (props) => {
 
       operators[index] = { definedData, domainData, y }
 
+      if (dataset.slices) {
+        const { start, end, items } = dataset.slices
+        const [startDatum, endDatum] = convertData([
+          { timestamp: start },
+          { timestamp: end },
+        ])
+        items.forEach(({ color, start, end }, sliceIndex) => {
+          selectOrAppend(chart, 'path', 'slice' + index + '_' + sliceIndex)
+            .datum([
+              { ...startDatum, ...start },
+              { ...endDatum, ...end },
+            ])
+            .attr('class', 'remove_me')
+            .attr('fill', color)
+            .attr('stroke', 'none')
+        })
+      }
+
       selectOrAppend(svg, 'g', 'y_axis' + index)
 
       svg
@@ -417,28 +435,33 @@ window.draw = (props) => {
           width
         )
 
-      defs
-        .append('linearGradient')
-        .attr('id', 'area-gradient' + index)
-        .attr('gradientUnits', 'userSpaceOnUse')
-        .attr('x1', 0)
-        .attr('x2', 0)
-        .attr('y1', 0)
-        .attr('y2', '100%')
-        .selectAll('stop')
-        .data([
-          { value: y.domain()[1], opacity: 0.3 },
+      if (dataset.areaColor !== null) {
+        const color = dataset.areaColor ?? getDatasetColor(dataset)
+        const baseOpacity = dataset.areaColor ? 1 : 0.3
+        const stops = [
+          { value: y.domain()[1], opacity: baseOpacity },
           {
             value: y.domain()[0] + (y.domain()[1] - y.domain()[0]) * 0.526042,
-            opacity: 0.223958 * 0.3,
+            opacity: 0.223958 * baseOpacity,
           },
           { value: y.domain()[0], opacity: 0 },
-        ])
-        .enter()
-        .append('stop')
-        .attr('offset', getGradientOffset(y))
-        .attr('stop-opacity', (d) => d.opacity)
-        .attr('stop-color', dataset.areaColor ?? getDatasetColor(dataset))
+        ] 
+        defs
+          .append('linearGradient')
+          .attr('id', 'area-gradient' + index)
+          .attr('gradientUnits', 'userSpaceOnUse')
+          .attr('x1', 0)
+          .attr('x2', 0)
+          .attr('y1', 0)
+          .attr('y2', '100%')
+          .selectAll('stop')
+          .data(stops)
+          .enter()
+          .append('stop')
+          .attr('offset', getGradientOffset(y))
+          .attr('stop-opacity', (d) => d.opacity)
+          .attr('stop-color', color)
+      }
 
       selectOrAppend(chart, 'path', 'area' + index)
         .datum(data)
@@ -692,6 +715,7 @@ window.draw = (props) => {
       })
 
       updateHighlight(duration)
+      updateSlices(duration)
     }
 
     function onZoom({ transform, sourceEvent }) {
@@ -742,6 +766,7 @@ window.draw = (props) => {
         x.domain(newX.domain())
 
         updateHighlight()
+        updateSlices()
       } catch (e) {
         postMessage('zoomerror', e.message)
       }
@@ -825,6 +850,27 @@ window.draw = (props) => {
       )
     }
 
+    function updateSlices(duration = 0) {
+      props.datasets.forEach((dataset, index) => {
+        if (!dataset.slices) return
+
+        const { y } = operators[index]
+        dataset.slices.items.forEach((_, sliceIndex) => {
+          d3.select('path#slice' + index + '_' + sliceIndex)
+            .transition()
+            .duration(duration)
+            .attr(
+              'd',
+              d3
+                .area()
+                .x((d) => x(d.date))
+                .y0((d) => y(d.top))
+                .y1((d) => y(d.bottom))
+            )
+        })
+      })
+    }
+
     if (x.range()[1] !== width) {
       const domain = x.domain().map((d) => d.getTime())
       x.range([0, width])
@@ -849,6 +895,7 @@ window.draw = (props) => {
     }
 
     updateHighlight(newScale ? 0 : 300)
+    updateSlices(newScale ? 0 : 300)
 
     if (!newScale && props.keepZoom) {
       rescaleY({ sourceEvent: null })

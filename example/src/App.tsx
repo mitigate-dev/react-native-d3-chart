@@ -3,6 +3,10 @@ import { View, StyleSheet, TouchableOpacity, Text, Switch } from 'react-native'
 
 import Chart, { ChartProps, Dataset } from 'react-native-d3-chart'
 
+import { buildSlices } from './helpers/buildSlices'
+import { generateTimeSeriesData } from './helpers/generateTimeSeriesData'
+import { temperatureData, visits } from './mockData'
+
 type TimeDomainType = 'hour' | 'day' | 'week' | 'month'
 
 const TIME_DOMAIN_TYPES: TimeDomainType[] = ['hour', 'day', 'week', 'month']
@@ -16,53 +20,22 @@ const chartColors: ChartProps['colors'] = {
   highlightTime: '#444',
 }
 
-// Generate data points every minute from a month ago to now
-const generateDataPoints = ({
-  startingValue = 400,
-  minimum = 0,
-  maximum = 3000,
-  radomFactor = 20,
-} = {}) => {
-  const points = []
-  const now = Date.now()
-  const monthAgo = now - 30 * 24 * 60 * 60 * 1000 // 30 days ago
-  let value = startingValue
-
-  for (let timestamp = monthAgo; timestamp <= now; timestamp += 60 * 1000) {
-    const randomVariation = (Math.random() - 0.5) * radomFactor
-    value += randomVariation
-
-    // either randomVariation was negative and value went below minimum
-    // or     randomVariation was positive and value went above maximum
-    if (value < minimum || value > maximum) {
-      // invert direction to keep within bounds
-      value -= 2 * randomVariation
-    }
-
-    points.push({ timestamp, value })
-  }
-
-  return points
-}
-
 enum Measurement {
   Temperature = 'Temperature',
   Blue = 'Blue',
   Green = 'Green',
   Pink = 'Pink',
+  Visits = 'Visits',
+  VisitRate = 'Visit Rate',
 }
+
 const measurementKeys = Object.values(Measurement)
 const measurementsRecords: Record<Measurement, Dataset> = {
   [Measurement.Temperature]: {
     unit: '°C',
-    points: generateDataPoints({
-      maximum: 40,
-      minimum: -10,
-      radomFactor: 1,
-      startingValue: -8,
-    }),
+    points: temperatureData,
     decimals: 0,
-    areaColor: '#83cba8',
+    areaColor: '#c4deff',
     color: {
       type: 'thresholds',
       baseColor: '#3d91ff',
@@ -79,7 +52,7 @@ const measurementsRecords: Record<Measurement, Dataset> = {
   },
   [Measurement.Blue]: {
     unit: 'l',
-    points: generateDataPoints({
+    points: generateTimeSeriesData({
       startingValue: 160,
       minimum: 50,
       radomFactor: 6,
@@ -90,20 +63,49 @@ const measurementsRecords: Record<Measurement, Dataset> = {
   },
   [Measurement.Green]: {
     unit: 'kg',
-    points: generateDataPoints(),
+    points: generateTimeSeriesData(),
     decimals: 0,
     color: '#6e6',
     measurementName: Measurement.Green,
   },
   [Measurement.Pink]: {
     unit: 'm/s',
-    points: generateDataPoints({
+    points: generateTimeSeriesData({
       startingValue: 20,
       minimum: 100,
     }),
     decimals: 1,
     color: '#e0e',
     measurementName: Measurement.Pink,
+  },
+
+  [Measurement.VisitRate]: {
+    unit: 'visits/h',
+    points: visits.movingAveregeData,
+    slices: buildSlices('horizontal', {
+      end: visits.latestTimestamp,
+      start: visits.oldestTimestamp,
+      yellowThreshold: visits.averageVisitRatePerHour,
+      redThreshold: visits.averageVisitRatePerHour * 1.1,
+    }),
+    decimals: 0,
+    color: '#000',
+    areaColor: null,
+    measurementName: Measurement.VisitRate,
+  },
+  [Measurement.Visits]: {
+    unit: 'pulses',
+    points: visits.culmulativeData,
+    decimals: 0,
+    color: '#000',
+    areaColor: null,
+    measurementName: 'Visits cumulative',
+    slices: buildSlices('axial', {
+      end: visits.latestTimestamp,
+      start: visits.oldestTimestamp,
+      yellowThreshold: visits.averageVisitRatePerHour,
+      redThreshold: visits.averageVisitRatePerHour * 1.1,
+    }),
   },
 }
 
