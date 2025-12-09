@@ -136,7 +136,10 @@ export default function Chart({
     return { uri }
   }, [])
 
-  const textZoom = Math.min(MAX_TEXT_ZOOM, PixelRatio.getFontScale() * 100)
+  const textZoom = Math.min(
+    MAX_TEXT_ZOOM,
+    Math.round(PixelRatio.getFontScale() * 100)
+  )
 
   return (
     <View style={{ width, height }}>
