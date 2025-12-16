@@ -10,6 +10,7 @@ import {
   type TimeDomain,
   type ChartColors,
   type ErrorSegment,
+  type XDividerConfig,
   type CalendarStrings,
 } from './types'
 
@@ -27,6 +28,7 @@ type HtmlProps = {
   timeDomain: TimeDomain
   marginHorizontal: number
   calendar?: CalendarStrings
+  xDividerConfig: XDividerConfig
   errorSegments?: ErrorSegment[]
 }
 
@@ -42,6 +44,7 @@ export default function Chart({
   colors: chartColors,
   locale = 'en',
   marginHorizontal = 0,
+  xDividerConfig = { type: 'tick' },
   onZoomEnded,
   onZoomStarted,
 }: ChartProps) {
@@ -67,6 +70,7 @@ export default function Chart({
       datasets,
       timeDomain,
       noDataString,
+      xDividerConfig,
       errorSegments,
       marginHorizontal,
       calendar: calendarStrings,
@@ -99,6 +103,7 @@ export default function Chart({
     chartColors,
     zoomEnabled,
     noDataString,
+    xDividerConfig,
     errorSegments,
     calendarStrings,
     marginHorizontal,

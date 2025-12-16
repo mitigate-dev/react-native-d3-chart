@@ -70,6 +70,45 @@ export type ErrorSegment = {
   start: Point['timestamp']
 }
 
+type XDividerTick = {
+  /**
+   * Style for vertical dividers on X axis: lines extending from labels (ticks).
+   */
+  type: 'tick'
+  /**
+   * Defaults to ChartColors.border
+   */
+  color?: string
+  /**
+   * Defaults to 0.5
+   */
+  strokeWidth?: number
+  /**
+   * Defaults to '2,2'
+   */
+  strokeDasharray?: string
+}
+
+type XDividerSegment = {
+  /**
+   * Style for vertical dividers on X axis: segments (full height segments, n hour has segment, n+1 does not).
+   * Top and bottom are transparent
+   */
+  type: 'segment'
+  /**
+   * Defaults to dynamic with dynamicThreshold matching 1.1 days in ms
+   *  - when less than threshold being displayed, every other hour has a segment
+   *  - when more than threshold being displayed, every other day has a segment
+   */
+  variant?: 'hour' | 'day' | { dynamicThreshold: number }
+  /**
+   * Defaults to #FBFBFC, a gradient will be applied
+   */
+  color?: string
+}
+
+export type XDividerConfig = XDividerTick | XDividerSegment
+
 export type ChartProps = {
   width: number
   height: number
@@ -80,6 +119,11 @@ export type ChartProps = {
   locale?: string
   zoomEnabled?: boolean
   marginHorizontal?: number
+  /**
+   * Style for vertical dividers on X axis
+   * Defaults to dashed lines using ChartColors.border color, exteding from labels.
+   */
+  xDividerConfig?: XDividerConfig
   errorSegments?: ErrorSegment[]
   calendarStrings?: CalendarStrings
   onZoomEnded?: () => void

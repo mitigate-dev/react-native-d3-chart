@@ -198,6 +198,7 @@ export default function App() {
         marginHorizontal={PADDING}
         errorSegments={errorSegments}
         noDataString="No data available"
+        xDividerConfig={{ type: 'segment', color: '#FFF2FF' }}
       />
       <View style={styles.spacer} />
       <View style={styles.timeDomainRow}>

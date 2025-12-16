@@ -153,16 +153,20 @@ function getDatasetColor(dataset, value) {
   return dataset.color
 }
 
-function formatXAxis(g) {
+function formatXAxis(g, xDividerConfig) {
   g.select('.domain').remove()
   g.selectAll('.tick text')
     .attr('font-size', 10)
     .style('color', colors.border)
     .attr('y', 10)
-  g.selectAll('.tick line')
-    .attr('stroke', colors.border)
-    .attr('stroke-width', 0.5)
-    .attr('stroke-dasharray', '2,2')
+  if (xDividerConfig.type === 'tick') {
+    g.selectAll('.tick line')
+      .attr('stroke', xDividerConfig.color ?? colors.border)
+      .attr('stroke-width', xDividerConfig.strokeWidth ?? 0.5)
+      .attr('stroke-dasharray', xDividerConfig.dashArray ?? '2,2')
+  } else {
+    g.selectAll('.tick line').remove()
+  }
 }
 
 function exessSymbolCount(textEl) {
@@ -370,10 +374,15 @@ window.draw = (props) => {
       wholeScaleX = x.copy()
     }
 
+    if (props.xDividerConfig.type === 'segment') {
+      var segmentHolder = selectOrAppend(svg, 'g', 'segment_holder')
+      segmentHolder.attr('clip-path', 'url(#clip)')
+    }
+
     const xAxis = selectOrAppend(svg, 'g', 'x_axis')
       .attr('transform', 'translate(0,' + height + ')')
       .call(d3.axisBottom(x).ticks(6).tickSize(-height).tickFormat(multiFormat))
-      .call(formatXAxis)
+      .call(formatXAxis, props.xDividerConfig)
 
     const defs = svg.append('defs').attr('class', 'remove_me')
     defs
@@ -403,6 +412,55 @@ window.draw = (props) => {
       .attr('offset', (d) => d.offset)
       .attr('stop-opacity', (d) => d.opacity)
       .attr('stop-color', '#000000')
+
+    var drawSegments = () => {
+      if (props.xDividerConfig.type !== 'segment') return
+      const { xDividerConfig } = props
+
+      const end = x.invert(width)
+      const start = x.invert(0)
+      const scope = end - start
+      const day = 24 * 60 * 60 * 1000
+      const hour = 60 * 60 * 1000
+
+      const interval = 
+        xDividerConfig.variant === "day" 
+          ? day
+        : xDividerConfig.variant === "hour"
+          ? hour
+        : scope > (xDividerConfig.variant?.dynamicThreshold ?? 1.1 * day)
+          ? day
+          : hour
+
+      const segments = []
+
+      start.setHours(0, 0, 0, 0)
+      const timeZoneRemainder = start % interval
+      for (
+        let beginning = start.getTime();
+        beginning < end.getTime();
+        beginning += interval
+      ) {
+        if (beginning % (2 * interval) === timeZoneRemainder) {
+          segments.push({
+            start: x(new Date(beginning)),
+            end: x(new Date(beginning + interval)),
+          })
+        }
+      }
+
+      segmentHolder.selectAll('rect').remove()
+      segmentHolder
+        .selectAll('rect')
+        .data(segments)
+        .enter()
+        .append('rect')
+        .attr('fill', 'url(#segment-gradient)')
+        .attr('height', height)
+        .attr('width', (d) => d.end - d.start)
+        .attr('x', (d) => d.start)
+    }
+    drawSegments()
 
     const chart = selectOrAppend(svg, 'g', 'chart').attr(
       'clip-path',
@@ -516,6 +574,29 @@ window.draw = (props) => {
           .attr('offset', getGradientOffset(y))
           .attr('stop-opacity', (d) => d.opacity)
           .attr('stop-color', color)
+      }
+
+      if (props.xDividerConfig.type === 'segment') {
+        defs
+          .append('linearGradient')
+          .attr('id', 'segment-gradient')
+          .attr('gradientUnits', 'userSpaceOnUse')
+          .attr('x1', 0)
+          .attr('x2', 0)
+          .attr('y1', 0)
+          .attr('y2', height)
+          .selectAll('stop')
+          .data([
+            { offset: '0%', opacity: 0 },
+            { offset: '7.51%', opacity: 1 },
+            { offset: '91.71%', opacity: 1 },
+            { offset: '100%', opacity: 0 },
+          ])
+          .enter()
+          .append('stop')
+          .attr('offset', (d) => d.offset)
+          .attr('stop-opacity', (d) => d.opacity)
+          .attr('stop-color', props.xDividerConfig.color ?? "#FBFBFC")
       }
 
       selectOrAppend(chart, 'path', 'area' + index)
@@ -785,7 +866,7 @@ window.draw = (props) => {
               .tickSize(-height)
               .tickFormat(multiFormat)
           )
-          .call(formatXAxis)
+          .call(formatXAxis, props.xDividerConfig)
 
         props.datasets.forEach(({ points }, index) => {
           const { y } = operators[index]
@@ -822,6 +903,7 @@ window.draw = (props) => {
 
         updateHighlight()
         updateSlices()
+        drawSegments()
         drawErrorSegments()
       } catch (e) {
         postMessage('zoomerror', e.message)
