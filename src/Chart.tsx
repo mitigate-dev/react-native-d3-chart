@@ -27,6 +27,7 @@ type HtmlProps = {
   noDataString: string
   timeDomain: TimeDomain
   marginHorizontal: number
+  highlightPosition: number
   calendar?: CalendarStrings
   xDividerConfig: XDividerConfig
   errorSegments?: ErrorSegment[]
@@ -44,6 +45,7 @@ export default function Chart({
   colors: chartColors,
   locale = 'en',
   marginHorizontal = 0,
+  highlightPosition = 0.5,
   xDividerConfig = { type: 'tick' },
   onZoomEnded,
   onZoomStarted,
@@ -73,6 +75,7 @@ export default function Chart({
       xDividerConfig,
       errorSegments,
       marginHorizontal,
+      highlightPosition,
       calendar: calendarStrings,
       zoomEnabled: !!zoomEnabled,
       colors: chartColors,
@@ -107,6 +110,7 @@ export default function Chart({
     errorSegments,
     calendarStrings,
     marginHorizontal,
+    highlightPosition,
   ])
 
   const onMessage = useCallback(

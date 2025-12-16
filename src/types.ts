@@ -120,6 +120,11 @@ export type ChartProps = {
   zoomEnabled?: boolean
   marginHorizontal?: number
   /**
+   * Position of the vertical highlight line as a fraction of the chart width (0 - left, 1 - right).
+   * Defaults to 0.5 (center).
+   */
+  highlightPosition?: number
+  /**
    * Style for vertical dividers on X axis
    * Defaults to dashed lines using ChartColors.border color, exteding from labels.
    */

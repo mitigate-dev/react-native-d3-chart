@@ -1,7 +1,6 @@
 export default `
 var zoomPixelPadding = 0,
   zoomTimePadding = 600000,
-  highlightPosition = 0.7,
   yLabelMargin = 7,
   yLabelMaxLength = 6,
   headerHeight = 44
@@ -678,8 +677,8 @@ window.draw = (props) => {
     selectOrAppend(svg, 'line', 'highlight')
       .style('stroke', colors.highlightLine)
       .style('stroke-width', 1)
-      .attr('x1', width * highlightPosition)
-      .attr('x2', width * highlightPosition)
+      .attr('x1', width * props.highlightPosition)
+      .attr('x2', width * props.highlightPosition)
       .attr('y1', 0)
       .attr('y2', height)
 
@@ -735,7 +734,7 @@ window.draw = (props) => {
           .attr('fill', 'transparent')
           .attr('stroke-width', 2)
           .attr('stroke', color)
-          .attr('cx', width * highlightPosition)
+          .attr('cx', width * props.highlightPosition)
 
         if (!highlightCroshair.attr('cy')) {
           highlightCroshair.attr('cy', height)
@@ -923,7 +922,7 @@ window.draw = (props) => {
     }
 
     function updateHighlight(duration = 0) {
-      const x0 = width * highlightPosition
+      const x0 = width * props.highlightPosition
       const highlightExactDate = x.invert(x0)
 
       const highlightedErrorSegment = props.errorSegments?.find(
