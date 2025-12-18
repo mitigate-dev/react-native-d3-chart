@@ -7,14 +7,13 @@ import Chart, {
   type ErrorSegment,
 } from 'react-native-d3-chart'
 
-import { buildSlices } from './helpers/buildSlices'
-import { generateTimeSeriesData } from './helpers/generateTimeSeriesData'
-import { temperatureData, visits } from './mockData'
+import { measurementsRecords, Measurement } from './data'
 import type { HighlightPayload } from '../../src/types'
 
 type TimeDomainType = 'hour' | 'day' | 'week' | 'month'
 
 const TIME_DOMAIN_TYPES: TimeDomainType[] = ['hour', 'day', 'week', 'month']
+const MEASUREMENT_KEYS = Object.values(Measurement)
 
 const chartColors: ChartProps['colors'] = {
   background: '#fff',
@@ -23,95 +22,6 @@ const chartColors: ChartProps['colors'] = {
   cursorStroke: '#0ff',
   highlightLabel: '#000',
   highlightTime: '#444',
-}
-
-enum Measurement {
-  Temperature = 'Temperature',
-  Blue = 'Blue',
-  Green = 'Green',
-  Pink = 'Pink',
-  Visits = 'Visits',
-  VisitRate = 'Visit Rate',
-}
-
-const measurementKeys = Object.values(Measurement)
-const measurementsRecords: Record<Measurement, Dataset> = {
-  [Measurement.Temperature]: {
-    unit: '°C',
-    points: temperatureData,
-    decimals: 0,
-    areaColor: '#c4deff',
-    color: {
-      type: 'thresholds',
-      baseColor: '#3d91ff',
-      gradientBlur: 2,
-      thresholds: [
-        { value: 32, color: '#bb2222' },
-        { value: 24, color: '#ffc400' },
-        { value: 16, color: '#089851' },
-        { value: 10, color: '#9ceeff' },
-        { value: 0, color: '#00d5ff' },
-      ],
-    },
-    measurementName: Measurement.Temperature,
-  },
-  [Measurement.Blue]: {
-    unit: 'l',
-    points: generateTimeSeriesData({
-      startingValue: 160,
-      minimum: 50,
-      radomFactor: 6,
-    }),
-    decimals: 0,
-    color: '#66e',
-    measurementName: Measurement.Blue,
-  },
-  [Measurement.Green]: {
-    unit: 'kg',
-    points: generateTimeSeriesData(),
-    decimals: 0,
-    color: '#6e6',
-    measurementName: Measurement.Green,
-  },
-  [Measurement.Pink]: {
-    unit: 'm/s',
-    points: generateTimeSeriesData({
-      startingValue: 20,
-      minimum: 100,
-    }),
-    decimals: 1,
-    color: '#e0e',
-    measurementName: Measurement.Pink,
-  },
-
-  [Measurement.VisitRate]: {
-    unit: 'visits/h',
-    points: visits.movingAveregeData,
-    slices: buildSlices('horizontal', {
-      end: visits.latestTimestamp,
-      start: visits.oldestTimestamp,
-      yellowThreshold: visits.averageVisitRatePerHour,
-      redThreshold: visits.averageVisitRatePerHour * 1.1,
-    }),
-    decimals: 0,
-    color: '#000',
-    areaColor: null,
-    measurementName: Measurement.VisitRate,
-  },
-  [Measurement.Visits]: {
-    unit: 'pulses',
-    points: visits.culmulativeData,
-    decimals: 0,
-    color: '#000',
-    areaColor: null,
-    measurementName: 'Visits cumulative',
-    slices: buildSlices('axial', {
-      end: visits.latestTimestamp,
-      start: visits.oldestTimestamp,
-      yellowThreshold: visits.averageVisitRatePerHour,
-      redThreshold: visits.averageVisitRatePerHour * 1.1,
-    }),
-  },
 }
 
 export default function App() {
@@ -194,6 +104,11 @@ export default function App() {
     [enabledMeasurements, errorSegments]
   )
 
+  const xDividerConfig = useMemo<ChartProps['xDividerConfig']>(
+    () => ({ type: 'segment', color: '#F2F2FF' }),
+    []
+  )
+
   return (
     <View
       style={styles.holder}
@@ -223,9 +138,9 @@ export default function App() {
         timeDomain={timeDomain}
         marginHorizontal={PADDING}
         errorSegments={errorSegments}
+        xDividerConfig={xDividerConfig}
         noDataString="No data available"
         highlightValuePosition={highlightValuePosition}
-        xDividerConfig={{ type: 'segment', color: '#F2F2FF' }}
         onHighlightChanged={setCurrentHighlight}
       />
       <View style={styles.spacer} />
@@ -257,7 +172,7 @@ export default function App() {
         ))}
       </View>
       {/* Measurement toggles */}
-      {measurementKeys.map((measurement) => (
+      {MEASUREMENT_KEYS.map((measurement) => (
         <View key={measurement} style={styles.switchContainer}>
           <Switch
             value={enabledMeasurements.includes(measurement)}
@@ -272,11 +187,11 @@ export default function App() {
                   return prev.filter((m) => m !== measurement)
 
                 // only one measurement was enabled, switch to next one
-                const currentIndex = measurementKeys.findIndex(
+                const currentIndex = MEASUREMENT_KEYS.findIndex(
                   (m) => m === measurement
                 )
-                const nextIndex = (currentIndex + 1) % measurementKeys.length
-                const nextMeasurement = measurementKeys[nextIndex]!
+                const nextIndex = (currentIndex + 1) % MEASUREMENT_KEYS.length
+                const nextMeasurement = MEASUREMENT_KEYS[nextIndex]!
 
                 return [nextMeasurement]
               })

@@ -1042,7 +1042,8 @@ window.draw = (props) => {
           .select('span#highlightvalue' + index)
           .style('color', color)
           .html(
-            errorMessage ?? d3.format('.' + decimals + 'f')(highlight.value) + ' ' + unit
+            errorMessage ??
+              d3.format('.' + decimals + 'f')(highlight.value) + ' ' + unit
           )
       })
 
