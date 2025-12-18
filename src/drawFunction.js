@@ -2,8 +2,7 @@ export default `
 var zoomPixelPadding = 0,
   zoomTimePadding = 600000,
   yLabelMargin = 7,
-  yLabelMaxLength = 6,
-  headerHeight = 44
+  yLabelMaxLength = 6
 
 function sample(data, count, domain) {
   const length = data?.length
@@ -294,12 +293,11 @@ window.draw = (props) => {
       bottom: 24,
     }
     var width = props.width - margin.left - margin.right
-    var height =
-      props.height -
-      margin.top -
-      margin.bottom -
-      headerHeight -
-      24 * (props.datasets.length - 1)
+    var headerHeight =
+      props.highlightValuePosition === 'top'
+        ? 44 + 24 * (props.datasets.length - 1)
+        : 0
+    var height = props.height - margin.top - margin.bottom - headerHeight
 
     if (typeof props.decimalSeparator === 'string') {
       d3.formatDefaultLocale({ decimal: props.decimalSeparator })
@@ -422,14 +420,14 @@ window.draw = (props) => {
       const day = 24 * 60 * 60 * 1000
       const hour = 60 * 60 * 1000
 
-      const interval = 
-        xDividerConfig.variant === "day" 
+      const interval =
+        xDividerConfig.variant === 'day'
           ? day
-        : xDividerConfig.variant === "hour"
-          ? hour
-        : scope > (xDividerConfig.variant?.dynamicThreshold ?? 1.1 * day)
-          ? day
-          : hour
+          : xDividerConfig.variant === 'hour'
+            ? hour
+            : scope > (xDividerConfig.variant?.dynamicThreshold ?? 1.1 * day)
+              ? day
+              : hour
 
       const segments = []
 
@@ -509,11 +507,14 @@ window.draw = (props) => {
       const definedData = data.filter(isDefined)
       const domainData = data
 
+      const tooltipSpace =
+        props.highlightValuePosition === 'tooltip'
+          ? 60 + props.datasets.length * 20
+          : 0
       const y = d3
         .scaleLinear()
         .domain(buildValueDomain(points, dataset))
-        .range([height - 1, 1])
-
+        .range([height - 1, tooltipSpace + 1])
       operators[index] = { definedData, domainData, y }
 
       if (dataset.slices) {
@@ -595,7 +596,7 @@ window.draw = (props) => {
           .append('stop')
           .attr('offset', (d) => d.offset)
           .attr('stop-opacity', (d) => d.opacity)
-          .attr('stop-color', props.xDividerConfig.color ?? "#FBFBFC")
+          .attr('stop-color', props.xDividerConfig.color ?? '#FBFBFC')
       }
 
       selectOrAppend(chart, 'path', 'area' + index)
@@ -669,10 +670,51 @@ window.draw = (props) => {
         )
     })
 
-    const valuesHolder = d3.select('#values_holder')
-    const timeholder = d3
-      .select('#timeholder')
-      .style('background', colors.highlightTime)
+    var valuesHolder, clockSpan, dateSpan, labelsHolder
+    switch (props.highlightValuePosition) {
+      case 'top':
+        d3.select('#tooltip_holder').style('display', 'none')
+        const container = d3
+          .select('#top_highlight_holder')
+          .style('display', null)
+
+        labelsHolder = container.select('#labels_holder')
+        valuesHolder = container.select('#values_holder')
+        clockSpan = container.select('#time')
+        dateSpan = container.select('#date')
+        break
+      case 'tooltip':
+        d3.select('#tooltip_holder')
+          .style('display', null)
+          .style('top', margin.top + 'px')
+          .style('left', width * props.highlightPosition + margin.left + 'px')
+
+        d3.select('#top_highlight_holder').style('display', 'none')
+
+        labelsHolder = null
+        valuesHolder = d3.select('#tooltip_values_holder')
+        clockSpan = d3.select('#tooltip_time')
+        dateSpan = d3.select('#tooltip_date')
+        break
+      case 'none':
+      default:
+        d3.select('#tooltip_holder').style('display', 'none')
+        d3.select('#top_highlight_holder').style('display', 'none')
+
+        dateSpan = null
+        clockSpan = null
+        valuesHolder = null
+        labelsHolder = null
+        break
+    }
+
+    console.log(
+      props.highlightValuePosition,
+      labelsHolder,
+      valuesHolder,
+      clockSpan,
+      dateSpan
+    )
 
     selectOrAppend(svg, 'line', 'highlight')
       .style('stroke', colors.highlightLine)
@@ -715,9 +757,11 @@ window.draw = (props) => {
       (dataset, index) => {
         const { points, measurementName, unit } = dataset
         const color = getDatasetColor(dataset)
-        selectOrAppend(d3.select('#labels_holder'), 'span', 'label' + index)
-          .style('color', colors.highlightLabel)
-          .html(measurementName)
+        if (labelsHolder !== null) {
+          selectOrAppend(labelsHolder, 'span', 'label' + index)
+            .style('color', colors.highlightLabel)
+            .html(measurementName)
+        }
 
         const noData = !points.find(isDefined)
         selectOrAppend(valuesHolder, 'span', 'highlightvalue' + index)
@@ -975,6 +1019,8 @@ window.draw = (props) => {
           .attr('stroke', color)
           .attr('opacity', tooFar ? 0 : 1)
 
+        if (props.highlightValuePosition === 'none') return
+
         valuesHolder
           .select('span#highlightvalue' + index)
           .style('color', color)
@@ -987,10 +1033,12 @@ window.draw = (props) => {
           )
       })
 
+      if (props.highlightValuePosition === 'none') return
+
       const date = highlightTime ?? highlightExactDate
 
-      timeholder.select('span#date').html(formatDate(date))
-      timeholder.select('span#time').html(
+      dateSpan.html(formatDate(date))
+      clockSpan.html(
         date.toLocaleString(props.locale, {
           hour: '2-digit',
           minute: '2-digit',

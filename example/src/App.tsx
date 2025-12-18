@@ -1,7 +1,11 @@
 import React, { useMemo, useState } from 'react'
 import { View, StyleSheet, TouchableOpacity, Text, Switch } from 'react-native'
 
-import Chart, { ChartProps, Dataset, ErrorSegment } from 'react-native-d3-chart'
+import Chart, {
+  type Dataset,
+  type ChartProps,
+  type ErrorSegment,
+} from 'react-native-d3-chart'
 
 import { buildSlices } from './helpers/buildSlices'
 import { generateTimeSeriesData } from './helpers/generateTimeSeriesData'
@@ -188,6 +192,21 @@ export default function App() {
       style={styles.holder}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
     >
+      <View style={styles.optionsRow}>
+        {(['top', 'tooltip', 'none'] as const).map((type) => (
+          <TouchableOpacity
+            key={type}
+            style={[
+              styles.optionsItem,
+              type === highlightValuePosition &&
+                styles.highlightPositionItemActive,
+            ]}
+            onPress={() => setHighlightValuePosition(type)}
+          >
+            <Text style={styles.optionsItemText}>{type}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       <Chart
         zoomEnabled
         width={width}
@@ -198,20 +217,22 @@ export default function App() {
         marginHorizontal={PADDING}
         errorSegments={errorSegments}
         noDataString="No data available"
-        xDividerConfig={{ type: 'segment', color: '#FFF2FF' }}
+        highlightValuePosition={highlightValuePosition}
+        xDividerConfig={{ type: 'segment', color: '#F2F2FF' }}
+        onHighlightChanged={setCurrentHighlight}
       />
       <View style={styles.spacer} />
-      <View style={styles.timeDomainRow}>
+      <View style={styles.optionsRow}>
         {TIME_DOMAIN_TYPES.map((type) => (
           <TouchableOpacity
             key={type}
             style={[
-              styles.timeDomainItem,
+              styles.optionsItem,
               type === timeDomainType && styles.timeDomainItemActive,
             ]}
             onPress={() => setTimeDomainType(type)}
           >
-            <Text style={styles.timeDomainItemText}>{type}</Text>
+            <Text style={styles.optionsItemText}>{type}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -254,28 +275,40 @@ const styles = StyleSheet.create({
     width: '100%',
     flex: 1,
     borderRadius: 10,
-    paddingVertical: PADDING,
+    paddingTop: 30,
+    paddingBottom: PADDING,
     backgroundColor: '#fff',
   },
   spacer: {
     height: 10,
   },
-  timeDomainRow: {
+  highlightContainer: {
+    right: 20,
+    bottom: 40,
+    opacity: 0.9,
+    position: 'absolute',
+    backgroundColor: '#dfe',
+  },
+  optionsRow: {
     flexDirection: 'row',
     paddingHorizontal: PADDING,
+    marginVertical: 10,
   },
-  timeDomainItem: {
+  optionsItem: {
     flex: 1,
     borderRadius: 11,
     paddingVertical: 2,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  optionsItemText: {
+    fontSize: 13,
+  },
   timeDomainItemActive: {
     backgroundColor: '#b22',
   },
-  timeDomainItemText: {
-    fontSize: 13,
+  highlightPositionItemActive: {
+    backgroundColor: '#2b2',
   },
   switchContainer: {
     marginVertical: 10,

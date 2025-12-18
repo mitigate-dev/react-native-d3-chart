@@ -124,13 +124,23 @@ export type ChartProps = {
    * Defaults to 0.5 (center).
    */
   highlightPosition?: number
+  errorSegments?: ErrorSegment[]
   /**
    * Style for vertical dividers on X axis
    * Defaults to dashed lines using ChartColors.border color, exteding from labels.
    */
   xDividerConfig?: XDividerConfig
-  errorSegments?: ErrorSegment[]
   calendarStrings?: CalendarStrings
+  /**
+   * Possition of the highlighted value.
+   *  - "top" - show value label at the top of the chart
+   * - "tooltip" - show value label in a tooltip near the highlight line
+   * - "none" - do not show value label. Consider using in combination with @prop `onHighlightChanged` for custom handling.
+   *
+   * Defaults to "top".
+   */
+  highlightValuePosition?: 'top' | 'tooltip' | 'none'
   onZoomEnded?: () => void
   onZoomStarted?: () => void
+  onHighlightChanged?: ({ timestamp, value }: Point) => void
 }

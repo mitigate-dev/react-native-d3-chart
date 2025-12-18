@@ -17,13 +17,14 @@
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    font-family: 'Helvetica';
     margin: 0;
   }
   #my_dataviz {
     position: relative;
     font-size: 0;
   }
-  #highlight_holder {
+  #top_highlight_holder {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -61,12 +62,50 @@
     font-weight: 700;
     margin-left: 8px;
   }
+  #tooltip_holder {
+    position: absolute;
+    width: fit-content;
+    top: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+  #tooltip_box {
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    height: fit-content;
+    pointer-events: all;
+    border-radius: 6px;
+    padding: 6px;
+    margin-top: 4px;
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+    transform: translateX(-50%);
+  }
+  #tooltip_holder span {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: medium;
+    text-align: center;
+  }
+  #tooltip_values_holder {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
 </style>
 
 <!-- Create a div where the graph will take place -->
 <body>
   <div id="my_dataviz">
-    <div id="highlight_holder">
+    <div id="tooltip_holder" style="display: none">
+      <div id="tooltip_box">
+        <div id="tooltip_values_holder"></div>
+        <span id="tooltip_time"></span>
+        <span id="tooltip_date"></span>
+      </div>
+    </div>
+    <div id="top_highlight_holder" style="display: none">
       <div id="labels_holder" class="row_holder"></div>
       <div id="values_holder" class="row_holder"></div>
       <div id="timeholder">
