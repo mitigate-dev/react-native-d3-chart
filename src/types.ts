@@ -84,6 +84,8 @@ type XDividerTick = {
    */
   strokeWidth?: number
   /**
+   * Stroke dash array for the full-height-tick lines
+   * See: https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/stroke-dasharray
    * Defaults to '2,2'
    */
   strokeDasharray?: string

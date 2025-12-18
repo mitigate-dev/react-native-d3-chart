@@ -161,7 +161,7 @@ function formatXAxis(g, xDividerConfig) {
     g.selectAll('.tick line')
       .attr('stroke', xDividerConfig.color ?? colors.border)
       .attr('stroke-width', xDividerConfig.strokeWidth ?? 0.5)
-      .attr('stroke-dasharray', xDividerConfig.dashArray ?? '2,2')
+      .attr('stroke-dasharray', xDividerConfig.strokeDasharray ?? '2,2')
   } else {
     g.selectAll('.tick line').remove()
   }
