@@ -755,10 +755,12 @@ window.draw = (props) => {
             .html(measurementName)
         }
 
-        const noData = !points.find(isDefined)
-        selectOrAppend(valuesHolder, 'span', 'highlightvalue' + index)
-          .style('color', color)
-          .html(noData ? props.noDataString : '')
+        if (valuesHolder !== null) {
+          const noData = !points.find(isDefined)
+          selectOrAppend(valuesHolder, 'span', 'highlightvalue' + index)
+            .style('color', color)
+            .html(noData ? props.noDataString : '')
+        }
 
         const highlightCroshair = selectOrAppend(
           selectOrAppend(svg, 'g', 'crosshair' + index),
