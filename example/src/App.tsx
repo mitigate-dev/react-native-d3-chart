@@ -10,6 +10,7 @@ import Chart, {
 import { buildSlices } from './helpers/buildSlices'
 import { generateTimeSeriesData } from './helpers/generateTimeSeriesData'
 import { temperatureData, visits } from './mockData'
+import type { HighlightPayload } from '../../src/types'
 
 type TimeDomainType = 'hour' | 'day' | 'week' | 'month'
 
@@ -142,6 +143,12 @@ export default function App() {
     [Measurement.Temperature]
   )
 
+  const [highlightValuePosition, setHighlightValuePosition] = useState<
+    'top' | 'tooltip' | 'none'
+  >('tooltip')
+
+  const [currentHighlight, setCurrentHighlight] = useState<HighlightPayload>()
+
   const errorSegments = useMemo<ErrorSegment[]>(() => {
     const now = Date.now()
     return [
@@ -234,6 +241,19 @@ export default function App() {
           >
             <Text style={styles.optionsItemText}>{type}</Text>
           </TouchableOpacity>
+        ))}
+      </View>
+      <View style={styles.highlightContainer}>
+        <Text>Highlight listener:</Text>
+        <Text>
+          Exact timestamp:
+          {currentHighlight?.timestamp &&
+            new Date(currentHighlight.timestamp).toTimeString()}
+        </Text>
+        {currentHighlight?.values.map((value, index) => (
+          <Text key={index} style={{ color: value?.color || '#000' }}>
+            {`${value?.measurementName}: ${value?.errorMessage ?? value?.value}`}
+          </Text>
         ))}
       </View>
       {/* Measurement toggles */}

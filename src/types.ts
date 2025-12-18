@@ -109,6 +109,17 @@ type XDividerSegment = {
 
 export type XDividerConfig = XDividerTick | XDividerSegment
 
+export type HighlightPayload = {
+  timestamp: number
+  values: ({
+    value: Point['value']
+    timestamp: Point['timestamp']
+    color: string
+    errorMessage: string | null
+    measurementName: Dataset['measurementName']
+  } | null)[]
+}
+
 export type ChartProps = {
   width: number
   height: number
@@ -142,5 +153,5 @@ export type ChartProps = {
   highlightValuePosition?: 'top' | 'tooltip' | 'none'
   onZoomEnded?: () => void
   onZoomStarted?: () => void
-  onHighlightChanged?: ({ timestamp, value }: Point) => void
+  onHighlightChanged?: (payload: HighlightPayload) => void
 }

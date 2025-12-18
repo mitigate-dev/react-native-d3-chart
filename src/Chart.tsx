@@ -28,6 +28,7 @@ type HtmlProps = {
   timeDomain: TimeDomain
   marginHorizontal: number
   highlightPosition: number
+  hasHighlightListener: boolean
   xDividerConfig: XDividerConfig
   highlightValuePosition: Required<ChartProps['highlightValuePosition']>
   calendar?: CalendarStrings
@@ -51,6 +52,7 @@ export default function Chart({
   xDividerConfig = { type: 'tick' },
   onZoomEnded,
   onZoomStarted,
+  onHighlightChanged,
 }: ChartProps) {
   const ref = useRef<WebView>(null)
   const propInjection = useRef<string>('')
@@ -78,10 +80,11 @@ export default function Chart({
       errorSegments,
       marginHorizontal,
       highlightPosition,
+      colors: chartColors,
       highlightValuePosition,
       calendar: calendarStrings,
       zoomEnabled: !!zoomEnabled,
-      colors: chartColors,
+      hasHighlightListener: !!onHighlightChanged,
     }
     currentTimeDomain.current = timeDomain
     const injection = `
@@ -109,11 +112,12 @@ export default function Chart({
     chartColors,
     zoomEnabled,
     noDataString,
-    xDividerConfig,
     errorSegments,
+    xDividerConfig,
     calendarStrings,
     marginHorizontal,
     highlightPosition,
+    onHighlightChanged,
     highlightValuePosition,
   ])
 
@@ -132,11 +136,14 @@ export default function Chart({
           message.payload === 'end' && onZoomEnded?.()
           message.payload === 'start' && onZoomStarted?.()
           break
+        case 'highlightChanged':
+          onHighlightChanged?.(message.payload)
+          break
         default:
           console.log(message)
       }
     },
-    [onZoomEnded, onZoomStarted]
+    [onZoomEnded, onZoomStarted, onHighlightChanged]
   )
 
   const source = useMemo(() => {

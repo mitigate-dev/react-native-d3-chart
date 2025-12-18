@@ -708,14 +708,6 @@ window.draw = (props) => {
         break
     }
 
-    console.log(
-      props.highlightValuePosition,
-      labelsHolder,
-      valuesHolder,
-      clockSpan,
-      dateSpan
-    )
-
     selectOrAppend(svg, 'line', 'highlight')
       .style('stroke', colors.highlightLine)
       .style('stroke-width', 1)
@@ -974,6 +966,12 @@ window.draw = (props) => {
       )
 
       var highlightTime = null
+
+      /**
+       * Only used to send highlight values to listener. Only populated if hasHighlightListener
+       */
+      const highlightValues = []
+
       props.datasets.forEach((dataset, index) => {
         const { unit, decimals } = dataset
         const { definedData, y } = operators[index]
@@ -984,6 +982,9 @@ window.draw = (props) => {
             .style('color', getDatasetColor(dataset))
             .html(props.noDataString)
 
+          if (props.hasHighlightListener) {
+            highlightValues.push(null)
+          }
           return
         }
 
@@ -1019,19 +1020,38 @@ window.draw = (props) => {
           .attr('stroke', color)
           .attr('opacity', tooFar ? 0 : 1)
 
+        const errorMessage = isInErrorSegment
+          ? highlightedErrorSegment.message
+          : tooFar
+            ? props.noDataString
+            : null
+
+        if (props.hasHighlightListener) {
+          highlightValues.push({
+            value: errorMessage ? null : highlight.value,
+            color,
+            errorMessage,
+            timestamp: highlight.date.valueOf(),
+            measurementName: dataset.measurementName,
+          })
+        }
+
         if (props.highlightValuePosition === 'none') return
 
         valuesHolder
           .select('span#highlightvalue' + index)
           .style('color', color)
           .html(
-            isInErrorSegment
-              ? highlightedErrorSegment.message
-              : tooFar
-                ? props.noDataString
-                : d3.format('.' + decimals + 'f')(highlight.value) + ' ' + unit
+            errorMessage ?? d3.format('.' + decimals + 'f')(highlight.value) + ' ' + unit
           )
       })
+
+      if (props.hasHighlightListener) {
+        postMessage('highlightChanged', {
+          values: highlightValues,
+          timestamp: highlightExactDate.valueOf(),
+        })
+      }
 
       if (props.highlightValuePosition === 'none') return
 
