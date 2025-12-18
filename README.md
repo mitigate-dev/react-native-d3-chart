@@ -328,6 +328,11 @@ const datasetWithSlices = {
 - react-native-webview >= 11.0.0
 - iOS 11.0+ / Android API 21+
 
+## Known Limitations
+
+- **Error segment gradient**: The gradient style for error segments is currently hardcoded and cannot be customized
+- **Highlight snap behavior**: The snap-to-data-point logic (distance thresholds of 8 pixels and 10 minutes) is hardcoded and not configurable via props
+
 ## Contributing
 
 See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the repository and the development workflow.
