@@ -105,20 +105,25 @@ export default function App() {
 
 ### Chart Props
 
-| Prop               | Type              | Required | Description                                                                        |
-| ------------------ | ----------------- | -------- | ---------------------------------------------------------------------------------- |
-| `width`            | `number`          | ✅       | Chart width in pixels                                                              |
-| `height`           | `number`          | ✅       | Chart height in pixels                                                             |
-| `datasets`         | `Dataset[]`       | ✅       | Array of data series to display                                                    |
-| `colors`           | `ChartColors`     | ✅       | Color configuration for chart elements                                             |
-| `timeDomain`       | `TimeDomain`      | ✅       | Control intial zoom level / scale of X-axis, doesn't have to fit the whole dataset |
-| `noDataString`     | `string`          | ✅       | Message to show when no data is available                                          |
-| `zoomEnabled`      | `boolean`         | ❌       | Enable zoom guesture                                                               |
-| `locale`           | `string`          | ❌       | Locale for date/time formatting (default: 'en')                                    |
-| `marginHorizontal` | `number`          | ❌       | Horizontal margin in pixels                                                        |
-| `calendarStrings`  | `CalendarStrings` | ❌       | Custom calendar strings for localization                                           |
-| `onZoomStarted`    | `() => void`      | ❌       | Callback when zoom interaction starts                                              |
-| `onZoomEnded`      | `() => void`      | ❌       | Callback when zoom interaction ends                                                |
+| Prop                     | Type                                  | Required | Description                                                                        |
+| ------------------------ | ------------------------------------- | -------- | ---------------------------------------------------------------------------------- |
+| `width`                  | `number`                              | ✅       | Chart width in pixels                                                              |
+| `height`                 | `number`                              | ✅       | Chart height in pixels                                                             |
+| `datasets`               | `Dataset[]`                           | ✅       | Array of data series to display                                                    |
+| `colors`                 | `ChartColors`                         | ✅       | Color configuration for chart elements                                             |
+| `timeDomain`             | `TimeDomain`                          | ✅       | Control intial zoom level / scale of X-axis, doesn't have to fit the whole dataset |
+| `noDataString`           | `string`                              | ✅       | Message to show when no data is available                                          |
+| `zoomEnabled`            | `boolean`                             | ❌       | Enable zoom guesture                                                               |
+| `locale`                 | `string`                              | ❌       | Locale for date/time formatting (default: 'en')                                    |
+| `marginHorizontal`       | `number`                              | ❌       | Horizontal margin in pixels                                                        |
+| `highlightPosition`      | `number`                              | ❌       | Position of highlight line (0-1, default: 0.5 for center)                          |
+| `highlightValuePosition` | `'top' \| 'tooltip' \| 'none'`        | ❌       | Where to show values: header, floating tooltip, or hidden (default: 'top')         |
+| `xDividerConfig`         | `XDividerConfig`                      | ❌       | Style for vertical dividers on X axis (ticks or segments)                          |
+| `errorSegments`          | `ErrorSegment[]`                      | ❌       | Time ranges with error messages to display                                         |
+| `calendarStrings`        | `CalendarStrings`                     | ❌       | Custom calendar strings for localization                                           |
+| `onZoomStarted`          | `() => void`                          | ❌       | Callback when zoom interaction starts                                              |
+| `onZoomEnded`            | `() => void`                          | ❌       | Callback when zoom interaction ends                                                |
+| `onHighlightChanged`     | `(payload: HighlightPayload) => void` | ❌       | Callback when highlight position changes with current values                       |
 
 ### Types
 
@@ -207,7 +212,129 @@ type CalendarStrings = {
 }
 ```
 
+#### ErrorSegment
+
+```typescript
+type ErrorSegment = {
+  message: string // Error message to display
+  messageColor: string // Color for the error message
+  start: number // Start timestamp (ms)
+  end: number // End timestamp (ms)
+}
+```
+
+#### XDividerConfig
+
+```typescript
+// Option 1: Tick style (lines extending from labels)
+type XDividerTick = {
+  type: 'tick'
+  color?: string // Defaults to ChartColors.border
+  strokeWidth?: number // Defaults to 0.5
+  strokeDasharray?: string // Defaults to '2,2'
+}
+
+// Option 2: Segment style (alternating full-height segments)
+type XDividerSegment = {
+  type: 'segment'
+  variant?: 'hour' | 'day' | { dynamicThreshold: number } // Defaults to dynamic
+  color?: string // Defaults to '#FBFBFC' with gradient
+}
+
+type XDividerConfig = XDividerTick | XDividerSegment
+```
+
+#### HighlightPayload
+
+```typescript
+type HighlightPayload = {
+  timestamp: number // Exact timestamp at highlight position
+  values: Array<{
+    value: number | null // Data value at this point
+    timestamp: number // Point timestamp
+    color: string // Dataset color
+    errorMessage: string | null // Error message if in error segment
+    measurementName: string // Dataset name
+  } | null> // null if dataset has no data at this position
+}
+```
+
 ## Advanced Usage
+
+### Highlight Position and Value Display
+
+Control where the vertical highlight line appears and how values are displayed:
+
+```tsx
+<Chart
+  // ... other props
+  highlightPosition={0.7} // Position from 0 (left) to 1 (right), default: 0.5 (center)
+  highlightValuePosition="tooltip" // 'top' (header), 'tooltip' (floating box), or 'none'
+  onHighlightChanged={useCallback((payload) => {
+    console.log('Current timestamp:', payload.timestamp)
+    console.log('Values:', payload.values)
+  }, [])}
+/>
+```
+
+**Highlight value position modes:**
+
+- `'top'` (default): Shows values in the chart header area
+- `'tooltip'`: Displays a floating tooltip box near the highlight line
+- `'none'`: Hides value display, useful with `onHighlightChanged` for custom UI
+
+### X-Axis Dividers
+
+Customize the vertical grid lines on the X-axis:
+
+```tsx
+// Dashed tick lines (default style)
+<Chart
+  xDividerConfig={{
+    type: 'tick',
+    color: '#999',
+    strokeWidth: 1,
+    strokeDasharray: '4,4',
+  }}
+/>
+
+// Alternating background segments
+<Chart
+  xDividerConfig={{
+    type: 'segment',
+    variant: 'hour', // or 'day' or { dynamicThreshold: 95040000 }
+    color: '#F5F5F5',
+  }}
+/>
+```
+
+**Segment variants:**
+
+- `'hour'`: Every other hour has a background segment
+- `'day'`: Every other day has a background segment
+- `{ dynamicThreshold: number }`: Auto-switches between hour/day based on visible time range
+
+### Error Segments
+
+Display error messages and highlight problematic time ranges:
+
+```tsx
+const errorSegments = [
+  {
+    message: 'Sensor offline',
+    messageColor: '#FF0000',
+    start: Date.now() - 3600000,
+    end: Date.now() - 1800000,
+  },
+]
+
+<Chart
+  // ... other props
+  errorSegments={errorSegments}
+/>
+```
+
+Data points within error segments will show the error message instead of values, and the background will be highlighted.
 
 ### Multiple Datasets
 
@@ -327,6 +454,11 @@ const datasetWithSlices = {
 - React Native >= 0.60
 - react-native-webview >= 11.0.0
 - iOS 11.0+ / Android API 21+
+
+## Known Limitations
+
+- **Error segment gradient**: The gradient style for error segments is currently hardcoded and cannot be customized
+- **Highlight snap behavior**: The snap-to-data-point logic (distance thresholds of 8 pixels and 10 minutes) is hardcoded and not configurable via props
 
 ## Contributing
 

@@ -1,11 +1,16 @@
 import React, { useMemo, useState } from 'react'
 import { View, StyleSheet, TouchableOpacity, Text, Switch } from 'react-native'
 
-import Chart, { ChartProps, Dataset } from 'react-native-d3-chart'
+import Chart, {
+  type Dataset,
+  type ChartProps,
+  type ErrorSegment,
+} from 'react-native-d3-chart'
 
 import { buildSlices } from './helpers/buildSlices'
 import { generateTimeSeriesData } from './helpers/generateTimeSeriesData'
 import { temperatureData, visits } from './mockData'
+import type { HighlightPayload } from '../../src/types'
 
 type TimeDomainType = 'hour' | 'day' | 'week' | 'month'
 
@@ -138,9 +143,55 @@ export default function App() {
     [Measurement.Temperature]
   )
 
+  const [highlightValuePosition, setHighlightValuePosition] = useState<
+    'top' | 'tooltip' | 'none'
+  >('tooltip')
+
+  const [currentHighlight, setCurrentHighlight] = useState<HighlightPayload>()
+
+  const errorSegments = useMemo<ErrorSegment[]>(() => {
+    const now = Date.now()
+    return [
+      {
+        message: 'Unknown error',
+        messageColor: '#f0f',
+        start: now - 50 * 60 * 1000,
+        end: now - 40 * 60 * 1000,
+      },
+      {
+        message: 'No data yet',
+        messageColor: '#b22',
+        start: now - 2 * 60 * 1000,
+        end: now + 15 * 60 * 1000,
+      },
+    ]
+  }, [])
+
   const datasets = useMemo<Dataset[]>(
-    () => enabledMeasurements.map((m) => measurementsRecords[m]),
-    [enabledMeasurements]
+    () =>
+      enabledMeasurements.map((enabledMeasurement, index) => {
+        const data = measurementsRecords[enabledMeasurement]
+        if (index !== 0) return data
+
+        const firstErrorSegment = errorSegments[0]
+        if (!firstErrorSegment) return data
+
+        // invalidate points within first error segment for the first measurement for demo purposes
+        return {
+          ...data,
+          decimalSeparator: ',',
+          decimals: 2,
+          points: data.points.map((point) => ({
+            timestamp: point.timestamp,
+            value:
+              point.timestamp - 60 * 1000 > firstErrorSegment.start &&
+              point.timestamp + 60 * 1000 < firstErrorSegment.end
+                ? null
+                : point.value,
+          })),
+        }
+      }),
+    [enabledMeasurements, errorSegments]
   )
 
   return (
@@ -148,6 +199,21 @@ export default function App() {
       style={styles.holder}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
     >
+      <View style={styles.optionsRow}>
+        {(['top', 'tooltip', 'none'] as const).map((type) => (
+          <TouchableOpacity
+            key={type}
+            style={[
+              styles.optionsItem,
+              type === highlightValuePosition &&
+                styles.highlightPositionItemActive,
+            ]}
+            onPress={() => setHighlightValuePosition(type)}
+          >
+            <Text style={styles.optionsItemText}>{type}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       <Chart
         zoomEnabled
         width={width}
@@ -156,21 +222,38 @@ export default function App() {
         colors={chartColors}
         timeDomain={timeDomain}
         marginHorizontal={PADDING}
+        errorSegments={errorSegments}
         noDataString="No data available"
+        highlightValuePosition={highlightValuePosition}
+        xDividerConfig={{ type: 'segment', color: '#F2F2FF' }}
+        onHighlightChanged={setCurrentHighlight}
       />
       <View style={styles.spacer} />
-      <View style={styles.timeDomainRow}>
+      <View style={styles.optionsRow}>
         {TIME_DOMAIN_TYPES.map((type) => (
           <TouchableOpacity
             key={type}
             style={[
-              styles.timeDomainItem,
+              styles.optionsItem,
               type === timeDomainType && styles.timeDomainItemActive,
             ]}
             onPress={() => setTimeDomainType(type)}
           >
-            <Text style={styles.timeDomainItemText}>{type}</Text>
+            <Text style={styles.optionsItemText}>{type}</Text>
           </TouchableOpacity>
+        ))}
+      </View>
+      <View style={styles.highlightContainer}>
+        <Text>Highlight listener:</Text>
+        <Text>
+          Exact timestamp:
+          {currentHighlight?.timestamp &&
+            new Date(currentHighlight.timestamp).toTimeString()}
+        </Text>
+        {currentHighlight?.values.map((value, index) => (
+          <Text key={index} style={{ color: value?.color || '#000' }}>
+            {`${value?.measurementName}: ${value?.errorMessage ?? value?.value}`}
+          </Text>
         ))}
       </View>
       {/* Measurement toggles */}
@@ -212,28 +295,40 @@ const styles = StyleSheet.create({
     width: '100%',
     flex: 1,
     borderRadius: 10,
-    paddingVertical: PADDING,
+    paddingTop: 30,
+    paddingBottom: PADDING,
     backgroundColor: '#fff',
   },
   spacer: {
     height: 10,
   },
-  timeDomainRow: {
+  highlightContainer: {
+    right: 20,
+    bottom: 40,
+    opacity: 0.9,
+    position: 'absolute',
+    backgroundColor: '#dfe',
+  },
+  optionsRow: {
     flexDirection: 'row',
     paddingHorizontal: PADDING,
+    marginVertical: 10,
   },
-  timeDomainItem: {
+  optionsItem: {
     flex: 1,
     borderRadius: 11,
     paddingVertical: 2,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  optionsItemText: {
+    fontSize: 13,
+  },
   timeDomainItemActive: {
     backgroundColor: '#b22',
   },
-  timeDomainItemText: {
-    fontSize: 13,
+  highlightPositionItemActive: {
+    backgroundColor: '#2b2',
   },
   switchContainer: {
     marginVertical: 10,
