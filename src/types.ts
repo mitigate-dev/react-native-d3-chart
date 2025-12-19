@@ -70,6 +70,58 @@ export type ErrorSegment = {
   start: Point['timestamp']
 }
 
+type XDividerTick = {
+  /**
+   * Style for vertical dividers on X axis: lines extending from labels (ticks).
+   */
+  type: 'tick'
+  /**
+   * Defaults to ChartColors.border
+   */
+  color?: string
+  /**
+   * Defaults to 0.5
+   */
+  strokeWidth?: number
+  /**
+   * Stroke dash array for the full-height-tick lines
+   * See: https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/stroke-dasharray
+   * Defaults to '2,2'
+   */
+  strokeDasharray?: string
+}
+
+type XDividerSegment = {
+  /**
+   * Style for vertical dividers on X axis: segments (full height segments, n hour has segment, n+1 does not).
+   * Top and bottom are transparent
+   */
+  type: 'segment'
+  /**
+   * Defaults to dynamic with dynamicThreshold matching 1.1 days in ms
+   *  - when less than threshold being displayed, every other hour has a segment
+   *  - when more than threshold being displayed, every other day has a segment
+   */
+  variant?: 'hour' | 'day' | { dynamicThreshold: number }
+  /**
+   * Defaults to #FBFBFC, a gradient will be applied
+   */
+  color?: string
+}
+
+export type XDividerConfig = XDividerTick | XDividerSegment
+
+export type HighlightPayload = {
+  timestamp: number
+  values: ({
+    value: Point['value']
+    timestamp: Point['timestamp']
+    color: string
+    errorMessage: string | null
+    measurementName: Dataset['measurementName']
+  } | null)[]
+}
+
 export type ChartProps = {
   width: number
   height: number
@@ -80,8 +132,28 @@ export type ChartProps = {
   locale?: string
   zoomEnabled?: boolean
   marginHorizontal?: number
+  /**
+   * Position of the vertical highlight line as a fraction of the chart width (0 - left, 1 - right).
+   * Defaults to 0.5 (center).
+   */
+  highlightPosition?: number
   errorSegments?: ErrorSegment[]
+  /**
+   * Style for vertical dividers on X axis
+   * Defaults to dashed lines using ChartColors.border color, exteding from labels.
+   */
+  xDividerConfig?: XDividerConfig
   calendarStrings?: CalendarStrings
+  /**
+   * Possition of the highlighted value.
+   *  - "top" - show value label at the top of the chart
+   * - "tooltip" - show value label in a tooltip near the highlight line
+   * - "none" - do not show value label. Consider using in combination with @prop `onHighlightChanged` for custom handling.
+   *
+   * Defaults to "top".
+   */
+  highlightValuePosition?: 'top' | 'tooltip' | 'none'
   onZoomEnded?: () => void
   onZoomStarted?: () => void
+  onHighlightChanged?: (payload: HighlightPayload) => void
 }

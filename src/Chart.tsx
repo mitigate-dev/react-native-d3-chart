@@ -10,6 +10,7 @@ import {
   type TimeDomain,
   type ChartColors,
   type ErrorSegment,
+  type XDividerConfig,
   type CalendarStrings,
 } from './types'
 
@@ -26,6 +27,10 @@ type HtmlProps = {
   noDataString: string
   timeDomain: TimeDomain
   marginHorizontal: number
+  highlightPosition: number
+  hasHighlightListener: boolean
+  xDividerConfig: XDividerConfig
+  highlightValuePosition: Required<ChartProps['highlightValuePosition']>
   calendar?: CalendarStrings
   errorSegments?: ErrorSegment[]
 }
@@ -42,8 +47,12 @@ export default function Chart({
   colors: chartColors,
   locale = 'en',
   marginHorizontal = 0,
+  highlightPosition = 0.5,
+  highlightValuePosition = 'top',
+  xDividerConfig = { type: 'tick' },
   onZoomEnded,
   onZoomStarted,
+  onHighlightChanged,
 }: ChartProps) {
   const ref = useRef<WebView>(null)
   const propInjection = useRef<string>('')
@@ -67,11 +76,15 @@ export default function Chart({
       datasets,
       timeDomain,
       noDataString,
+      xDividerConfig,
       errorSegments,
       marginHorizontal,
+      highlightPosition,
+      colors: chartColors,
+      highlightValuePosition,
       calendar: calendarStrings,
       zoomEnabled: !!zoomEnabled,
-      colors: chartColors,
+      hasHighlightListener: !!onHighlightChanged,
     }
     currentTimeDomain.current = timeDomain
     const injection = `
@@ -100,8 +113,12 @@ export default function Chart({
     zoomEnabled,
     noDataString,
     errorSegments,
+    xDividerConfig,
     calendarStrings,
     marginHorizontal,
+    highlightPosition,
+    onHighlightChanged,
+    highlightValuePosition,
   ])
 
   const onMessage = useCallback(
@@ -119,11 +136,14 @@ export default function Chart({
           message.payload === 'end' && onZoomEnded?.()
           message.payload === 'start' && onZoomStarted?.()
           break
+        case 'highlightChanged':
+          onHighlightChanged?.(message.payload)
+          break
         default:
           console.log(message)
       }
     },
-    [onZoomEnded, onZoomStarted]
+    [onZoomEnded, onZoomStarted, onHighlightChanged]
   )
 
   const source = useMemo(() => {

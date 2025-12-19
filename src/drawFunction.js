@@ -1,10 +1,8 @@
 export default `
 var zoomPixelPadding = 0,
   zoomTimePadding = 600000,
-  highlightPosition = 0.7,
   yLabelMargin = 7,
-  yLabelMaxLength = 6,
-  headerHeight = 44
+  yLabelMaxLength = 6
 
 function sample(data, count, domain) {
   const length = data?.length
@@ -153,16 +151,20 @@ function getDatasetColor(dataset, value) {
   return dataset.color
 }
 
-function formatXAxis(g) {
+function formatXAxis(g, xDividerConfig) {
   g.select('.domain').remove()
   g.selectAll('.tick text')
     .attr('font-size', 10)
     .style('color', colors.border)
     .attr('y', 10)
-  g.selectAll('.tick line')
-    .attr('stroke', colors.border)
-    .attr('stroke-width', 0.5)
-    .attr('stroke-dasharray', '2,2')
+  if (xDividerConfig.type === 'tick') {
+    g.selectAll('.tick line')
+      .attr('stroke', xDividerConfig.color ?? colors.border)
+      .attr('stroke-width', xDividerConfig.strokeWidth ?? 0.5)
+      .attr('stroke-dasharray', xDividerConfig.strokeDasharray ?? '2,2')
+  } else {
+    g.selectAll('.tick line').remove()
+  }
 }
 
 function exessSymbolCount(textEl) {
@@ -291,12 +293,11 @@ window.draw = (props) => {
       bottom: 24,
     }
     var width = props.width - margin.left - margin.right
-    var height =
-      props.height -
-      margin.top -
-      margin.bottom -
-      headerHeight -
-      24 * (props.datasets.length - 1)
+    var headerHeight =
+      props.highlightValuePosition === 'top'
+        ? 44 + 24 * (props.datasets.length - 1)
+        : 0
+    var height = props.height - margin.top - margin.bottom - headerHeight
 
     if (typeof props.decimalSeparator === 'string') {
       d3.formatDefaultLocale({ decimal: props.decimalSeparator })
@@ -370,10 +371,15 @@ window.draw = (props) => {
       wholeScaleX = x.copy()
     }
 
+    if (props.xDividerConfig.type === 'segment') {
+      var segmentHolder = selectOrAppend(svg, 'g', 'segment_holder')
+      segmentHolder.attr('clip-path', 'url(#clip)')
+    }
+
     const xAxis = selectOrAppend(svg, 'g', 'x_axis')
       .attr('transform', 'translate(0,' + height + ')')
       .call(d3.axisBottom(x).ticks(6).tickSize(-height).tickFormat(multiFormat))
-      .call(formatXAxis)
+      .call(formatXAxis, props.xDividerConfig)
 
     const defs = svg.append('defs').attr('class', 'remove_me')
     defs
@@ -403,6 +409,55 @@ window.draw = (props) => {
       .attr('offset', (d) => d.offset)
       .attr('stop-opacity', (d) => d.opacity)
       .attr('stop-color', '#000000')
+
+    var drawSegments = () => {
+      if (props.xDividerConfig.type !== 'segment') return
+      const { xDividerConfig } = props
+
+      const end = x.invert(width)
+      const start = x.invert(0)
+      const scope = end - start
+      const day = 24 * 60 * 60 * 1000
+      const hour = 60 * 60 * 1000
+
+      const interval =
+        xDividerConfig.variant === 'day'
+          ? day
+          : xDividerConfig.variant === 'hour'
+            ? hour
+            : scope > (xDividerConfig.variant?.dynamicThreshold ?? 1.1 * day)
+              ? day
+              : hour
+
+      const segments = []
+
+      start.setHours(0, 0, 0, 0)
+      const timeZoneRemainder = start % interval
+      for (
+        let beginning = start.getTime();
+        beginning < end.getTime();
+        beginning += interval
+      ) {
+        if (beginning % (2 * interval) === timeZoneRemainder) {
+          segments.push({
+            start: x(new Date(beginning)),
+            end: x(new Date(beginning + interval)),
+          })
+        }
+      }
+
+      segmentHolder.selectAll('rect').remove()
+      segmentHolder
+        .selectAll('rect')
+        .data(segments)
+        .enter()
+        .append('rect')
+        .attr('fill', 'url(#segment-gradient)')
+        .attr('height', height)
+        .attr('width', (d) => d.end - d.start)
+        .attr('x', (d) => d.start)
+    }
+    drawSegments()
 
     const chart = selectOrAppend(svg, 'g', 'chart').attr(
       'clip-path',
@@ -452,11 +507,14 @@ window.draw = (props) => {
       const definedData = data.filter(isDefined)
       const domainData = data
 
+      const tooltipSpace =
+        props.highlightValuePosition === 'tooltip'
+          ? 60 + props.datasets.length * 20
+          : 0
       const y = d3
         .scaleLinear()
         .domain(buildValueDomain(points, dataset))
-        .range([height - 1, 1])
-
+        .range([height - 1, tooltipSpace + 1])
       operators[index] = { definedData, domainData, y }
 
       if (dataset.slices) {
@@ -516,6 +574,29 @@ window.draw = (props) => {
           .attr('offset', getGradientOffset(y))
           .attr('stop-opacity', (d) => d.opacity)
           .attr('stop-color', color)
+      }
+
+      if (props.xDividerConfig.type === 'segment') {
+        defs
+          .append('linearGradient')
+          .attr('id', 'segment-gradient')
+          .attr('gradientUnits', 'userSpaceOnUse')
+          .attr('x1', 0)
+          .attr('x2', 0)
+          .attr('y1', 0)
+          .attr('y2', height)
+          .selectAll('stop')
+          .data([
+            { offset: '0%', opacity: 0 },
+            { offset: '7.51%', opacity: 1 },
+            { offset: '91.71%', opacity: 1 },
+            { offset: '100%', opacity: 0 },
+          ])
+          .enter()
+          .append('stop')
+          .attr('offset', (d) => d.offset)
+          .attr('stop-opacity', (d) => d.opacity)
+          .attr('stop-color', props.xDividerConfig.color ?? '#FBFBFC')
       }
 
       selectOrAppend(chart, 'path', 'area' + index)
@@ -589,16 +670,49 @@ window.draw = (props) => {
         )
     })
 
-    const valuesHolder = d3.select('#values_holder')
-    const timeholder = d3
-      .select('#timeholder')
-      .style('background', colors.highlightTime)
+    var valuesHolder, clockSpan, dateSpan, labelsHolder
+    switch (props.highlightValuePosition) {
+      case 'top':
+        d3.select('#tooltip_holder').style('display', 'none')
+        const container = d3
+          .select('#top_highlight_holder')
+          .style('display', null)
+
+        labelsHolder = container.select('#labels_holder')
+        valuesHolder = container.select('#values_holder')
+        clockSpan = container.select('#time')
+        dateSpan = container.select('#date')
+        break
+      case 'tooltip':
+        d3.select('#tooltip_holder')
+          .style('display', null)
+          .style('top', margin.top + 'px')
+          .style('left', width * props.highlightPosition + margin.left + 'px')
+
+        d3.select('#top_highlight_holder').style('display', 'none')
+
+        labelsHolder = null
+        valuesHolder = d3.select('#tooltip_values_holder')
+        clockSpan = d3.select('#tooltip_time')
+        dateSpan = d3.select('#tooltip_date')
+        break
+      case 'none':
+      default:
+        d3.select('#tooltip_holder').style('display', 'none')
+        d3.select('#top_highlight_holder').style('display', 'none')
+
+        dateSpan = null
+        clockSpan = null
+        valuesHolder = null
+        labelsHolder = null
+        break
+    }
 
     selectOrAppend(svg, 'line', 'highlight')
       .style('stroke', colors.highlightLine)
       .style('stroke-width', 1)
-      .attr('x1', width * highlightPosition)
-      .attr('x2', width * highlightPosition)
+      .attr('x1', width * props.highlightPosition)
+      .attr('x2', width * props.highlightPosition)
       .attr('y1', 0)
       .attr('y2', height)
 
@@ -635,14 +749,18 @@ window.draw = (props) => {
       (dataset, index) => {
         const { points, measurementName, unit } = dataset
         const color = getDatasetColor(dataset)
-        selectOrAppend(d3.select('#labels_holder'), 'span', 'label' + index)
-          .style('color', colors.highlightLabel)
-          .html(measurementName)
+        if (labelsHolder !== null) {
+          selectOrAppend(labelsHolder, 'span', 'label' + index)
+            .style('color', colors.highlightLabel)
+            .html(measurementName)
+        }
 
-        const noData = !points.find(isDefined)
-        selectOrAppend(valuesHolder, 'span', 'highlightvalue' + index)
-          .style('color', color)
-          .html(noData ? props.noDataString : '')
+        if (valuesHolder !== null) {
+          const noData = !points.find(isDefined)
+          selectOrAppend(valuesHolder, 'span', 'highlightvalue' + index)
+            .style('color', color)
+            .html(noData ? props.noDataString : '')
+        }
 
         const highlightCroshair = selectOrAppend(
           selectOrAppend(svg, 'g', 'crosshair' + index),
@@ -654,7 +772,7 @@ window.draw = (props) => {
           .attr('fill', 'transparent')
           .attr('stroke-width', 2)
           .attr('stroke', color)
-          .attr('cx', width * highlightPosition)
+          .attr('cx', width * props.highlightPosition)
 
         if (!highlightCroshair.attr('cy')) {
           highlightCroshair.attr('cy', height)
@@ -785,7 +903,7 @@ window.draw = (props) => {
               .tickSize(-height)
               .tickFormat(multiFormat)
           )
-          .call(formatXAxis)
+          .call(formatXAxis, props.xDividerConfig)
 
         props.datasets.forEach(({ points }, index) => {
           const { y } = operators[index]
@@ -822,6 +940,7 @@ window.draw = (props) => {
 
         updateHighlight()
         updateSlices()
+        drawSegments()
         drawErrorSegments()
       } catch (e) {
         postMessage('zoomerror', e.message)
@@ -841,7 +960,7 @@ window.draw = (props) => {
     }
 
     function updateHighlight(duration = 0) {
-      const x0 = width * highlightPosition
+      const x0 = width * props.highlightPosition
       const highlightExactDate = x.invert(x0)
 
       const highlightedErrorSegment = props.errorSegments?.find(
@@ -849,6 +968,12 @@ window.draw = (props) => {
       )
 
       var highlightTime = null
+
+      /**
+       * Only used to send highlight values to listener. Only populated if hasHighlightListener
+       */
+      const highlightValues = []
+
       props.datasets.forEach((dataset, index) => {
         const { unit, decimals } = dataset
         const { definedData, y } = operators[index]
@@ -859,6 +984,9 @@ window.draw = (props) => {
             .style('color', getDatasetColor(dataset))
             .html(props.noDataString)
 
+          if (props.hasHighlightListener) {
+            highlightValues.push(null)
+          }
           return
         }
 
@@ -894,22 +1022,46 @@ window.draw = (props) => {
           .attr('stroke', color)
           .attr('opacity', tooFar ? 0 : 1)
 
+        const errorMessage = isInErrorSegment
+          ? highlightedErrorSegment.message
+          : tooFar
+            ? props.noDataString
+            : null
+
+        if (props.hasHighlightListener) {
+          highlightValues.push({
+            value: errorMessage ? null : highlight.value,
+            color,
+            errorMessage,
+            timestamp: highlight.date.valueOf(),
+            measurementName: dataset.measurementName,
+          })
+        }
+
+        if (props.highlightValuePosition === 'none') return
+
         valuesHolder
           .select('span#highlightvalue' + index)
           .style('color', color)
           .html(
-            isInErrorSegment
-              ? highlightedErrorSegment.message
-              : tooFar
-                ? props.noDataString
-                : d3.format('.' + decimals + 'f')(highlight.value) + ' ' + unit
+            errorMessage ??
+              d3.format('.' + decimals + 'f')(highlight.value) + ' ' + unit
           )
       })
 
+      if (props.hasHighlightListener) {
+        postMessage('highlightChanged', {
+          values: highlightValues,
+          timestamp: highlightExactDate.valueOf(),
+        })
+      }
+
+      if (props.highlightValuePosition === 'none') return
+
       const date = highlightTime ?? highlightExactDate
 
-      timeholder.select('span#date').html(formatDate(date))
-      timeholder.select('span#time').html(
+      dateSpan.html(formatDate(date))
+      clockSpan.html(
         date.toLocaleString(props.locale, {
           hour: '2-digit',
           minute: '2-digit',
