@@ -1,4 +1,4 @@
-import type { Point } from 'react-native-d3-chart'
+import type { Point } from '@mitigate-dev/react-native-d3-chart'
 
 import { generateRandomPulses } from './helpers/generateRandomPulses'
 import { generateTimeSeriesData } from './helpers/generateTimeSeriesData'

@@ -1,4 +1,4 @@
-# react-native-d3-chart
+# @mitigate-dev/react-native-d3-chart
 
 Create performant charts with zooming, panning and localization using D3.js in a WebView. Perfect for time-series data visualization with smooth interactions.
 
@@ -21,9 +21,9 @@ _Interactive chart with zoom, pan, and multi-dataset support_
 ## Installation
 
 ```sh
-npm install react-native-d3-chart
+npm install @mitigate-dev/react-native-d3-chart
 # or
-yarn add react-native-d3-chart
+yarn add @mitigate-dev/react-native-d3-chart
 ```
 
 **Note**: This library requires `react-native-webview`. If you don't have it installed:
@@ -39,7 +39,7 @@ yarn add react-native-webview
 ```tsx
 import React, { useState, useMemo } from 'react'
 import { View } from 'react-native'
-import Chart from 'react-native-d3-chart'
+import Chart from '@mitigate-dev/react-native-d3-chart'
 
 export default function App() {
   const [width, setWidth] = useState(0)

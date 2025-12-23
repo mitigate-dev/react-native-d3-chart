@@ -2,7 +2,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "react-native-d3-chart": ["./src/index"]
+      "@mitigate-dev/react-native-d3-chart": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,

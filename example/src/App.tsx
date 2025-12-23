@@ -5,7 +5,7 @@ import Chart, {
   type Dataset,
   type ChartProps,
   type ErrorSegment,
-} from 'react-native-d3-chart'
+} from '@mitigate-dev/react-native-d3-chart'
 
 import { buildSlices } from './helpers/buildSlices'
 import { generateTimeSeriesData } from './helpers/generateTimeSeriesData'
