@@ -1,6 +1,6 @@
 {
   "name": "@mitigate-dev/react-native-d3-chart",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Create performant charts with zooming, panning and localization",
   "source": "./src/index.tsx",
   "main": "./lib/commonjs/index.js",
