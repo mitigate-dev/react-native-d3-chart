@@ -4,7 +4,7 @@ Create performant charts with zooming, panning and localization using D3.js in a
 
 ## Preview
 
-https://github.com/user-attachments/assets/e2a03e9f-a29c-465c-b966-e729e1f6565f
+[![Demo](./example/assets/d3-demo.gif)](https://youtu.be/7BeFYNpY23w)
 
 _Interactive chart with zoom, pan, and multi-dataset support_
 
